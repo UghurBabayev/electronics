@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Default admin istifadəçi (şifrə: admin123 — BCrypt) -->
+    <changeSet id="009-seed-admin" author="admin">
+        <insert tableName="users">
+            <column name="username"  value="admin"/>
+            <column name="password"  value="$2a$12$ePzV6VPmJ1G8kWf1Xm3Q8.s5uL5NkKjH0B2wYlUiGzT9RPPNAlNUe"/>
+            <column name="full_name" value="Administrator"/>
+            <column name="role"      value="ADMIN"/>
+        </insert>
+    </changeSet>
+
+    <!-- Kateqoriyalar -->
+    <changeSet id="009-seed-categories" author="admin">
+        <insert tableName="categories"><column name="name" value="Smartfonlar"/></insert>
+        <insert tableName="categories"><column name="name" value="Noutbuklar"/></insert>
+        <insert tableName="categories"><column name="name" value="Planşetlər"/></insert>
+        <insert tableName="categories"><column name="name" value="Aksesuarlar"/></insert>
+        <insert tableName="categories"><column name="name" value="Televizorlar"/></insert>
+        <insert tableName="categories"><column name="name" value="Audio"/></insert>
+        <insert tableName="categories"><column name="name" value="Oyun konsolları"/></insert>
+        <insert tableName="categories"><column name="name" value="Digər"/></insert>
+    </changeSet>
+
+    <!-- Markalar -->
+    <changeSet id="009-seed-brands" author="admin">
+        <insert tableName="brands"><column name="name" value="Samsung"/></insert>
+        <insert tableName="brands"><column name="name" value="Apple"/></insert>
+        <insert tableName="brands"><column name="name" value="Xiaomi"/></insert>
+        <insert tableName="brands"><column name="name" value="Huawei"/></insert>
+        <insert tableName="brands"><column name="name" value="Lenovo"/></insert>
+        <insert tableName="brands"><column name="name" value="Asus"/></insert>
+        <insert tableName="brands"><column name="name" value="Sony"/></insert>
+        <insert tableName="brands"><column name="name" value="LG"/></insert>
+        <insert tableName="brands"><column name="name" value="HP"/></insert>
+        <insert tableName="brands"><column name="name" value="Dell"/></insert>
+        <insert tableName="brands"><column name="name" value="Digər"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

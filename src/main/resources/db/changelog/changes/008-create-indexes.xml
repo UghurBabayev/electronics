@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="008-create-indexes" author="admin">
+        <createIndex tableName="products" indexName="idx_products_category">
+            <column name="category_id"/>
+        </createIndex>
+        <createIndex tableName="products" indexName="idx_products_brand">
+            <column name="brand_id"/>
+        </createIndex>
+        <createIndex tableName="sales" indexName="idx_sales_product">
+            <column name="product_id"/>
+        </createIndex>
+        <createIndex tableName="sales" indexName="idx_sales_customer">
+            <column name="customer_id"/>
+        </createIndex>
+        <createIndex tableName="sales" indexName="idx_sales_date">
+            <column name="sale_date"/>
+        </createIndex>
+        <createIndex tableName="installment_payments" indexName="idx_inst_payments_plan">
+            <column name="plan_id"/>
+        </createIndex>
+        <createIndex tableName="installment_payments" indexName="idx_inst_payments_due">
+            <column name="due_date"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,164 @@
+async function loadSettings() {
+    const [cats, brands, balances] = await Promise.all([
+        API.get('/categories'),
+        API.get('/brands'),
+        API.get('/balances')
+    ]);
+
+    document.getElementById('content').innerHTML = `
+        <div class="page-header">
+            <div class="page-title">Ayarlar</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+
+            <!-- Kateqoriyalar -->
+            <div class="card">
+                <div class="toolbar" style="margin-bottom:12px">
+                    <strong>Kateqoriyalar</strong>
+                    <button class="btn btn-primary btn-sm" onclick="showCatForm()">+ Əlavə et</button>
+                </div>
+                <div id="cat-list">
+                    ${cats.map(c => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+                        <span>${c.name}</span>
+                        <button class="btn btn-danger btn-sm" onclick="deleteCat(${c.id})">Sil</button>
+                    </div>`).join('')}
+                </div>
+            </div>
+
+            <!-- Markalar -->
+            <div class="card">
+                <div class="toolbar" style="margin-bottom:12px">
+                    <strong>Markalar</strong>
+                    <button class="btn btn-primary btn-sm" onclick="showBrandForm()">+ Əlavə et</button>
+                </div>
+                <div id="brand-list">
+                    ${brands.map(b => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+                        <span>${b.name}</span>
+                        <button class="btn btn-danger btn-sm" onclick="deleteBrand(${b.id})">Sil</button>
+                    </div>`).join('')}
+                </div>
+            </div>
+        </div>
+
+        <!-- Başlanğıc məbləğ -->
+        <div class="card">
+            <div class="toolbar" style="margin-bottom:12px">
+                <div>
+                    <strong>Başlanğıc məbləğ</strong>
+                    <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Kassaya əlavə edilən məbləğlər</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="showBalanceForm()">+ Əlavə et</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Tarix</th><th>Məbləğ</th><th>Qeyd</th><th></th></tr></thead>
+                    <tbody id="balance-body">
+                        ${balances.map(b => `
+                        <tr>
+                            <td>${fmtDate(b.balanceDate)}</td>
+                            <td><strong>${fmt(b.amount)}</strong></td>
+                            <td>${b.note || '—'}</td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteBalance(${b.id})">Sil</button></td>
+                        </tr>`).join('') || '<tr class="empty-row"><td colspan="4">Məbləğ yoxdur</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+}
+
+function showCatForm() {
+    openModal(`
+        <div class="modal">
+            <div class="modal-header"><span class="modal-title">Yeni kateqoriya</span>
+                <button class="modal-close" onclick="closeModal()">×</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Ad *</label><input id="cat-name" required></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Ləğv et</button>
+                <button class="btn btn-primary" onclick="saveCat()">Yadda saxla</button>
+            </div>
+        </div>`);
+}
+
+async function saveCat() {
+    try {
+        await API.post('/categories', { name: document.getElementById('cat-name').value });
+        closeModal(); showToast('Kateqoriya əlavə edildi'); loadSettings();
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteCat(id) {
+    if (!confirm('Silinsin?')) return;
+    try { await API.delete('/categories/' + id); showToast('Silindi'); loadSettings(); }
+    catch (e) { showToast(e.message, 'error'); }
+}
+
+function showBrandForm() {
+    openModal(`
+        <div class="modal">
+            <div class="modal-header"><span class="modal-title">Yeni marka</span>
+                <button class="modal-close" onclick="closeModal()">×</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Ad *</label><input id="brand-name" required></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Ləğv et</button>
+                <button class="btn btn-primary" onclick="saveBrand()">Yadda saxla</button>
+            </div>
+        </div>`);
+}
+
+async function saveBrand() {
+    try {
+        await API.post('/brands', { name: document.getElementById('brand-name').value });
+        closeModal(); showToast('Marka əlavə edildi'); loadSettings();
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteBrand(id) {
+    if (!confirm('Silinsin?')) return;
+    try { await API.delete('/brands/' + id); showToast('Silindi'); loadSettings(); }
+    catch (e) { showToast(e.message, 'error'); }
+}
+
+function showBalanceForm() {
+    openModal(`
+        <div class="modal">
+            <div class="modal-header"><span class="modal-title">Məbləğ əlavə et</span>
+                <button class="modal-close" onclick="closeModal()">×</button></div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label>Məbləğ (₼) *</label>
+                        <input id="bal-amount" type="number" step="0.01" min="0"></div>
+                    <div class="form-group"><label>Tarix *</label>
+                        <input id="bal-date" type="date" value="${today()}"></div>
+                </div>
+                <div class="form-group"><label>Qeyd</label>
+                    <textarea id="bal-note" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Ləğv et</button>
+                <button class="btn btn-primary" onclick="saveBalance()">Yadda saxla</button>
+            </div>
+        </div>`);
+}
+
+async function saveBalance() {
+    try {
+        await API.post('/balances', {
+            amount:      document.getElementById('bal-amount').value,
+            balanceDate: document.getElementById('bal-date').value,
+            note:        document.getElementById('bal-note').value || null
+        });
+        closeModal(); showToast('Məbləğ əlavə edildi'); loadSettings();
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteBalance(id) {
+    if (!confirm('Silinsin?')) return;
+    try { await API.delete('/balances/' + id); showToast('Silindi'); loadSettings(); }
+    catch (e) { showToast(e.message, 'error'); }
+}

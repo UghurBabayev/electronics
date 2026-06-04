@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş — Elektronika</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-page">
+<div class="login-card">
+    <div class="login-logo">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <path d="M8 21h8M12 17v4"/>
+        </svg>
+        <span>Elektronika</span>
+    </div>
+    <h2>Sistemə daxil ol</h2>
+    <div id="login-error" class="alert alert-error" style="display:none"></div>
+    <form id="login-form">
+        <div class="form-group">
+            <label>İstifadəçi adı</label>
+            <input type="text" id="username" required autofocus placeholder="admin">
+        </div>
+        <div class="form-group">
+            <label>Şifrə</label>
+            <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="login-btn">Daxil ol</button>
+    </form>
+</div>
+<script>
+    if (localStorage.getItem('token')) window.location.href = '/index.html';
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('login-btn');
+        const err = document.getElementById('login-error');
+        btn.disabled = true;
+        btn.textContent = 'Yüklənir...';
+        err.style.display = 'none';
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Xəta baş verdi');
+            }
+            const data = await res.json();
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify({ username: data.username, fullName: data.fullName, role: data.role }));
+            window.location.href = '/index.html';
+        } catch (ex) {
+            err.textContent = ex.message;
+            err.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Daxil ol';
+        }
+    });
+</script>
+</body>
+</html>
