@@ -1,7 +1,8 @@
 async function loadSettings() {
-    const [cats, brands, balances] = await Promise.all([
+    const [cats, brands, models, balances] = await Promise.all([
         API.get('/categories'),
         API.get('/brands'),
+        API.get('/models'),
         API.get('/balances')
     ]);
 
@@ -39,6 +40,35 @@ async function loadSettings() {
                         <button class="btn btn-danger btn-sm" onclick="deleteBrand(${b.id})">Sil</button>
                     </div>`).join('')}
                 </div>
+            </div>
+        </div>
+
+        <!-- Modellər -->
+        <div class="card" style="margin-bottom:20px">
+            <div class="toolbar" style="margin-bottom:12px">
+                <div>
+                    <strong>Modellər</strong>
+                    <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Məhsul modelləri</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="showModelForm()">+ Əlavə et</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Ad</th><th>Marka</th><th>Kateqoriya</th><th>Satış qiyməti</th><th></th></tr></thead>
+                    <tbody>
+                        ${models.map(m => `
+                        <tr>
+                            <td><strong>${m.name}</strong></td>
+                            <td>${m.brand || '—'}</td>
+                            <td>${m.category || '—'}</td>
+                            <td>${m.salePrice ? fmt(m.salePrice) : '—'}</td>
+                            <td>
+                                <button class="btn btn-ghost btn-sm" onclick="showModelForm(${m.id})">Düzəlt</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteModel(${m.id})">Sil</button>
+                            </td>
+                        </tr>`).join('') || '<tr class="empty-row"><td colspan="5">Model yoxdur</td></tr>'}
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -93,6 +123,57 @@ async function saveCat() {
 async function deleteCat(id) {
     if (!confirm('Silinsin?')) return;
     try { await API.delete('/categories/' + id); showToast('Silindi'); loadSettings(); }
+    catch (e) { showToast(e.message, 'error'); }
+}
+
+async function showModelForm(id = null) {
+    const [cats, brands] = await Promise.all([API.get('/categories'), API.get('/brands')]);
+    const m = id ? (await API.get('/models')).find(x => x.id === id) : {};
+    openModal(`
+        <div class="modal">
+            <div class="modal-header"><span class="modal-title">${id ? 'Modeli düzəlt' : 'Yeni model'}</span>
+                <button class="modal-close" onclick="closeModal()">×</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Ad *</label><input id="mod-name" value="${m.name || ''}" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Marka</label>
+                        <select id="mod-brand">
+                            <option value="">Seçin</option>
+                            ${brands.map(b => `<option value="${b.id}" ${m.brandId==b.id?'selected':''}>${b.name}</option>`).join('')}
+                        </select></div>
+                    <div class="form-group"><label>Kateqoriya</label>
+                        <select id="mod-cat">
+                            <option value="">Seçin</option>
+                            ${cats.map(c => `<option value="${c.id}" ${m.categoryId==c.id?'selected':''}>${c.name}</option>`).join('')}
+                        </select></div>
+                </div>
+                <div class="form-group"><label>Satış qiyməti (₼)</label>
+                    <input id="mod-price" type="number" step="0.01" min="0" value="${m.salePrice || ''}"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Ləğv et</button>
+                <button class="btn btn-primary" onclick="saveModel(${id || 'null'})">Yadda saxla</button>
+            </div>
+        </div>`);
+}
+
+async function saveModel(id) {
+    const body = {
+        name:       document.getElementById('mod-name').value,
+        brandId:    document.getElementById('mod-brand').value || null,
+        categoryId: document.getElementById('mod-cat').value || null,
+        salePrice:  document.getElementById('mod-price').value || null
+    };
+    try {
+        if (id) await API.put('/models/' + id, body);
+        else    await API.post('/models', body);
+        closeModal(); showToast(id ? 'Model yeniləndi' : 'Model əlavə edildi'); loadSettings();
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteModel(id) {
+    if (!confirm('Silinsin?')) return;
+    try { await API.delete('/models/' + id); showToast('Silindi'); loadSettings(); }
     catch (e) { showToast(e.message, 'error'); }
 }
 

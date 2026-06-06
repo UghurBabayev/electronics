@@ -6,11 +6,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ProductRequest(
-        @NotBlank String name,
-        Long categoryId,
-        Long brandId,
+        @NotNull Long modelId,
         @NotNull @Positive BigDecimal purchasePrice,
-        BigDecimal salePrice,
         @NotNull LocalDate purchaseDate,
         @NotNull @Min(1) Integer quantity,
         String description

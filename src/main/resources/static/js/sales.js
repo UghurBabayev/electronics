@@ -81,7 +81,7 @@ async function showSaleForm() {
                 <div class="form-group"><label>Məhsul *</label>
                     <select id="sf-product">
                         <option value="">Seçin</option>
-                        ${products.map(p => `<option value="${p.id}">${p.name} (${p.quantity} ədəd qaldı)</option>`).join('')}
+                        ${products.map(p => `<option value="${p.id}">${p.modelName || '?'} (${p.quantity} ədəd qaldı)</option>`).join('')}
                     </select></div>
                 <div class="form-group"><label>Müştəri</label>
                     <select id="sf-customer">

@@ -24,7 +24,7 @@ public record SaleResponse(
         return new SaleResponse(
                 s.getId(),
                 s.getProduct().getId(),
-                s.getProduct().getName(),
+                s.getProduct().getModel() != null ? s.getProduct().getModel().getName() : null,
                 s.getCustomer() != null ? s.getCustomer().getId() : null,
                 s.getCustomer() != null ? s.getCustomer().getFullName() : null,
                 s.getSalePrice(), s.getSaleDate(), s.getPaymentType(),
