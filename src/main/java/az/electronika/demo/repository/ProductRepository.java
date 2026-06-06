@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    @Query("SELECT p FROM Product p WHERE p.model.name LIKE %:name%")
+    @Query("SELECT p FROM Product p WHERE p.model IS NOT NULL AND LOWER(p.model.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Product> findByNameContainingIgnoreCase(String name);
 
     @Query("SELECT p FROM Product p WHERE p.quantity > 0")
