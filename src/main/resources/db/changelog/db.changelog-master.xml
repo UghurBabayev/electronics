@@ -14,5 +14,6 @@
     <include file="db/changelog/changes/007-create-initial-balances.xml"/>
     <include file="db/changelog/changes/008-create-indexes.xml"/>
     <include file="db/changelog/changes/009-seed-data.xml"/>
+    <include file="db/changelog/changes/010-fix-admin-password.xml"/>
 
 </databaseChangeLog>
