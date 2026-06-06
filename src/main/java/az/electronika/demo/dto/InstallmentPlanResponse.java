@@ -34,7 +34,7 @@ public record InstallmentPlanResponse(
                 plan.getId(),
                 plan.getSale().getId(),
                 customerName,
-                plan.getSale().getProduct().getName(),
+                plan.getSale().getProduct().getModel() != null ? plan.getSale().getProduct().getModel().getName() : null,
                 plan.getTotalAmount(),
                 plan.getMonthlyPayment(),
                 plan.getDurationMonths(),
