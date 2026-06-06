@@ -31,6 +31,9 @@ public class Product {
     @Column(name = "purchase_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal purchasePrice;
 
+    @Column(name = "sale_price", precision = 12, scale = 2)
+    private BigDecimal salePrice;
+
     @Column(name = "purchase_date", nullable = false)
     private LocalDate purchaseDate;
 

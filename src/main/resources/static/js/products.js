@@ -28,7 +28,7 @@ async function loadProducts() {
                 <table id="prod-table">
                     <thead><tr>
                         <th>Ad</th><th>Kateqoriya</th><th>Marka</th>
-                        <th>Alış qiyməti</th><th>Stok</th><th>Alış tarixi</th><th></th>
+                        <th>Alış qiyməti</th><th>Satış qiyməti</th><th>Stok</th><th>Alış tarixi</th><th></th>
                     </tr></thead>
                     <tbody id="prod-body"></tbody>
                 </table>
@@ -53,6 +53,7 @@ function renderProductRows(list) {
             <td>${p.category || '—'}</td>
             <td>${p.brand || '—'}</td>
             <td>${fmt(p.purchasePrice)}</td>
+            <td>${p.salePrice ? fmt(p.salePrice) : '—'}</td>
             <td><span class="badge ${p.quantity > 0 ? 'badge-green' : 'badge-red'}">${p.quantity} ədəd</span></td>
             <td>${fmtDate(p.purchaseDate)}</td>
             <td>
@@ -94,14 +95,21 @@ async function showProductForm(id = null) {
                             ${cats.map(c => `<option value="${c.id}" ${p.categoryId==c.id?'selected':''}>${c.name}</option>`).join('')}
                         </select></div>
                     <div class="form-group"><label>Marka</label>
-                        <select id="pf-brand">
-                            <option value="">Seçin</option>
-                            ${brands.map(b => `<option value="${b.id}" ${p.brandId==b.id?'selected':''}>${b.name}</option>`).join('')}
-                        </select></div>
+                        <div style="display:flex;gap:6px">
+                            <select id="pf-brand" style="flex:1">
+                                <option value="">Seçin</option>
+                                ${brands.map(b => `<option value="${b.id}" ${p.brandId==b.id?'selected':''}>${b.name}</option>`).join('')}
+                            </select>
+                            <button type="button" class="btn btn-ghost btn-sm" onclick="quickAddBrand()" title="Yeni marka">+</button>
+                        </div></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Alış qiyməti (₼) *</label>
                         <input id="pf-price" type="number" step="0.01" min="0" value="${p.purchasePrice || ''}"></div>
+                    <div class="form-group"><label>Satış qiyməti (₼)</label>
+                        <input id="pf-sale-price" type="number" step="0.01" min="0" value="${p.salePrice || ''}"></div>
+                </div>
+                <div class="form-row">
                     <div class="form-group"><label>Alış tarixi *</label>
                         <input id="pf-date" type="date" value="${p.purchaseDate || today()}"></div>
                 </div>
@@ -123,6 +131,7 @@ async function saveProduct(id) {
         categoryId: document.getElementById('pf-cat').value || null,
         brandId: document.getElementById('pf-brand').value || null,
         purchasePrice: document.getElementById('pf-price').value,
+        salePrice: document.getElementById('pf-sale-price').value || null,
         purchaseDate: document.getElementById('pf-date').value,
         quantity: parseInt(document.getElementById('pf-qty').value),
         description: document.getElementById('pf-desc').value || null
@@ -137,6 +146,22 @@ async function saveProduct(id) {
         document.getElementById('prod-form-err').textContent = e.message;
         document.getElementById('prod-form-err').style.display = 'block';
     }
+}
+
+async function quickAddBrand() {
+    const name = prompt('Yeni marka adı:');
+    if (!name || !name.trim()) return;
+    try {
+        const brand = await API.post('/brands', { name: name.trim() });
+        const sel = document.getElementById('pf-brand');
+        const opt = document.createElement('option');
+        opt.value = brand.id;
+        opt.textContent = brand.name;
+        opt.selected = true;
+        sel.appendChild(opt);
+        window._brands.push(brand);
+        showToast('Marka əlavə edildi');
+    } catch (e) { showToast(e.message, 'error'); }
 }
 
 async function deleteProduct(id) {

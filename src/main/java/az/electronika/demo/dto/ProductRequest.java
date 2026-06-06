@@ -10,6 +10,7 @@ public record ProductRequest(
         Long categoryId,
         Long brandId,
         @NotNull @Positive BigDecimal purchasePrice,
+        BigDecimal salePrice,
         @NotNull LocalDate purchaseDate,
         @NotNull @Min(1) Integer quantity,
         String description

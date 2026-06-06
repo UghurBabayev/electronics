@@ -44,6 +44,7 @@ public class ProductService {
                 .category(resolveCategory(req.categoryId()))
                 .brand(resolveBrand(req.brandId()))
                 .purchasePrice(req.purchasePrice())
+                .salePrice(req.salePrice())
                 .purchaseDate(req.purchaseDate())
                 .quantity(req.quantity())
                 .description(req.description())
@@ -57,6 +58,7 @@ public class ProductService {
         p.setCategory(resolveCategory(req.categoryId()));
         p.setBrand(resolveBrand(req.brandId()));
         p.setPurchasePrice(req.purchasePrice());
+        p.setSalePrice(req.salePrice());
         p.setPurchaseDate(req.purchaseDate());
         p.setQuantity(req.quantity());
         p.setDescription(req.description());

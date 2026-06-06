@@ -14,6 +14,7 @@ public record ProductResponse(
         String brand,
         Long brandId,
         BigDecimal purchasePrice,
+        BigDecimal salePrice,
         LocalDate purchaseDate,
         Integer quantity,
         String description,
@@ -26,7 +27,7 @@ public record ProductResponse(
                 p.getCategory() != null ? p.getCategory().getId() : null,
                 p.getBrand() != null ? p.getBrand().getName() : null,
                 p.getBrand() != null ? p.getBrand().getId() : null,
-                p.getPurchasePrice(), p.getPurchaseDate(),
+                p.getPurchasePrice(), p.getSalePrice(), p.getPurchaseDate(),
                 p.getQuantity(), p.getDescription(), p.getCreatedAt()
         );
     }
