@@ -90,10 +90,13 @@ async function showProductForm(id = null) {
                     <input id="pf-name" value="${p.name || ''}" required></div>
                 <div class="form-row">
                     <div class="form-group"><label>Kateqoriya</label>
-                        <select id="pf-cat">
-                            <option value="">Seçin</option>
-                            ${cats.map(c => `<option value="${c.id}" ${p.categoryId==c.id?'selected':''}>${c.name}</option>`).join('')}
-                        </select></div>
+                        <div style="display:flex;gap:6px">
+                            <select id="pf-cat" style="flex:1">
+                                <option value="">Seçin</option>
+                                ${cats.map(c => `<option value="${c.id}" ${p.categoryId==c.id?'selected':''}>${c.name}</option>`).join('')}
+                            </select>
+                            <button type="button" class="btn btn-ghost btn-sm" onclick="quickAddCat()" title="Yeni kateqoriya">+</button>
+                        </div></div>
                     <div class="form-group"><label>Marka</label>
                         <div style="display:flex;gap:6px">
                             <select id="pf-brand" style="flex:1">
@@ -146,6 +149,22 @@ async function saveProduct(id) {
         document.getElementById('prod-form-err').textContent = e.message;
         document.getElementById('prod-form-err').style.display = 'block';
     }
+}
+
+async function quickAddCat() {
+    const name = prompt('Yeni kateqoriya adı:');
+    if (!name || !name.trim()) return;
+    try {
+        const cat = await API.post('/categories', { name: name.trim() });
+        const sel = document.getElementById('pf-cat');
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        opt.selected = true;
+        sel.appendChild(opt);
+        window._categories.push(cat);
+        showToast('Kateqoriya əlavə edildi');
+    } catch (e) { showToast(e.message, 'error'); }
 }
 
 async function quickAddBrand() {
