@@ -1,9 +1,11 @@
 async function loadSettings() {
-    const [cats, brands, models, balances] = await Promise.all([
+    const isAdmin = (JSON.parse(localStorage.getItem('user') || '{}').role === 'ADMIN');
+    const [cats, brands, models, balances, users] = await Promise.all([
         API.get('/categories'),
         API.get('/brands'),
         API.get('/models'),
-        API.get('/balances')
+        API.get('/balances'),
+        isAdmin ? API.get('/users') : Promise.resolve(null)
     ]);
 
     document.getElementById('content').innerHTML = `
@@ -70,6 +72,36 @@ async function loadSettings() {
                 </table>
             </div>
         </div>
+
+        ${isAdmin && users ? `
+        <!-- İstifadəçilər (yalnız ADMIN) -->
+        <div class="card" style="margin-bottom:20px">
+            <div class="toolbar" style="margin-bottom:12px">
+                <div>
+                    <strong>İstifadəçilər</strong>
+                    <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Sistemə giriş hüququ olan istifadəçilər</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="showUserForm()">+ Yeni istifadəçi</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Ad Soyad</th><th>İstifadəçi adı</th><th>Rol</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        ${users.map(u => `
+                        <tr>
+                            <td><strong>${u.fullName}</strong></td>
+                            <td>${u.username}</td>
+                            <td><span class="badge ${u.role==='ADMIN'?'badge-blue':'badge-gray'}">${u.role}</span></td>
+                            <td><span class="badge ${u.active?'badge-green':'badge-red'}">${u.active?'Aktiv':'Deaktiv'}</span></td>
+                            <td>
+                                <button class="btn btn-ghost btn-sm" onclick="showUserForm(${JSON.stringify(u).replace(/"/g,'&quot;')})">Düzəlt</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${u.username}')">Sil</button>
+                            </td>
+                        </tr>`).join('') || '<tr class="empty-row"><td colspan="5">İstifadəçi yoxdur</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        </div>` : ''}
 
         <!-- Başlanğıc məbləğ -->
         <div class="card">
@@ -237,5 +269,73 @@ async function saveBalance() {
 async function deleteBalance(id) {
     if (!confirm('Silinsin?')) return;
     try { await API.delete('/balances/' + id); showToast('Silindi'); loadSettings(); }
+    catch (e) { showToast(e.message, 'error'); }
+}
+
+function showUserForm(u = null) {
+    const isEdit = u !== null;
+    if (typeof u === 'string') u = JSON.parse(u);
+    openModal(`
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">${isEdit ? 'İstifadəçini düzəlt' : 'Yeni istifadəçi'}</span>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="user-form-err" class="alert alert-error" style="display:none"></div>
+                ${!isEdit ? `<div class="form-group"><label>İstifadəçi adı *</label>
+                    <input id="usr-name" value="" required placeholder="admin2"></div>` : ''}
+                <div class="form-group"><label>Ad Soyad *</label>
+                    <input id="usr-fullname" value="${isEdit ? u.fullName : ''}" required></div>
+                <div class="form-group"><label>Rol *</label>
+                    <select id="usr-role">
+                        <option value="USER" ${isEdit && u.role==='USER'?'selected':''}>USER</option>
+                        <option value="ADMIN" ${isEdit && u.role==='ADMIN'?'selected':''}>ADMIN</option>
+                    </select></div>
+                ${isEdit ? `<div class="form-group"><label>Status</label>
+                    <select id="usr-active">
+                        <option value="true" ${u.active?'selected':''}>Aktiv</option>
+                        <option value="false" ${!u.active?'selected':''}>Deaktiv</option>
+                    </select></div>` : ''}
+                <div class="form-group"><label>${isEdit ? 'Yeni şifrə (boş buraxsanız dəyişmir)' : 'Şifrə *'}</label>
+                    <input id="usr-pass" type="password" ${!isEdit?'required':''} placeholder="${isEdit?'Dəyişmək istəmirsinizsə boş buraxın':''}"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Ləğv et</button>
+                <button class="btn btn-primary" onclick="saveUser(${isEdit ? u.id : 'null'})">Yadda saxla</button>
+            </div>
+        </div>`);
+}
+
+async function saveUser(id) {
+    const errEl = document.getElementById('user-form-err');
+    errEl.style.display = 'none';
+    try {
+        if (id) {
+            await API.put('/users/' + id, {
+                fullName:    document.getElementById('usr-fullname').value,
+                role:        document.getElementById('usr-role').value,
+                active:      document.getElementById('usr-active').value === 'true',
+                newPassword: document.getElementById('usr-pass').value || null
+            });
+            showToast('İstifadəçi yeniləndi');
+        } else {
+            await API.post('/users', {
+                username: document.getElementById('usr-name').value,
+                fullName: document.getElementById('usr-fullname').value,
+                role:     document.getElementById('usr-role').value,
+                password: document.getElementById('usr-pass').value
+            });
+            showToast('İstifadəçi yaradıldı');
+        }
+        closeModal(); loadSettings();
+    } catch (e) {
+        errEl.textContent = e.message; errEl.style.display = 'block';
+    }
+}
+
+async function deleteUser(id, username) {
+    if (!confirm(`"${username}" istifadəçisi silinsin? Bu əməliyyat geri alına bilməz.`)) return;
+    try { await API.delete('/users/' + id); showToast('İstifadəçi silindi'); loadSettings(); }
     catch (e) { showToast(e.message, 'error'); }
 }

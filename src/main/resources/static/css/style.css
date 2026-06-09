@@ -78,6 +78,7 @@ tr:hover td { background: #f8fafc; }
 /* ── BADGES ── */
 .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-gray { background: #f1f5f9; color: #64748b; }
 .badge-green { background: #dcfce7; color: #15803d; }
 .badge-red { background: #fee2e2; color: #b91c1c; }
 .badge-orange { background: #fef3c7; color: #b45309; }
