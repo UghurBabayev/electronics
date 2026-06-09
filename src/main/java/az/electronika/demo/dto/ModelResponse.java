@@ -1,7 +1,6 @@
 package az.electronika.demo.dto;
 
 import az.electronika.demo.entity.Model;
-import java.math.BigDecimal;
 
 public record ModelResponse(
         Long id,
@@ -9,8 +8,7 @@ public record ModelResponse(
         String brand,
         Long brandId,
         String category,
-        Long categoryId,
-        BigDecimal salePrice
+        Long categoryId
 ) {
     public static ModelResponse from(Model m) {
         return new ModelResponse(
@@ -18,8 +16,7 @@ public record ModelResponse(
                 m.getBrand() != null ? m.getBrand().getName() : null,
                 m.getBrand() != null ? m.getBrand().getId() : null,
                 m.getCategory() != null ? m.getCategory().getName() : null,
-                m.getCategory() != null ? m.getCategory().getId() : null,
-                m.getSalePrice()
+                m.getCategory() != null ? m.getCategory().getId() : null
         );
     }
 }

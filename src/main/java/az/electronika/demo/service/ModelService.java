@@ -30,7 +30,6 @@ public class ModelService {
                 .name(req.name())
                 .brand(resolveBrand(req.brandId()))
                 .category(resolveCategory(req.categoryId()))
-                .salePrice(req.salePrice())
                 .build();
         return ModelResponse.from(modelRepo.save(m));
     }
@@ -40,7 +39,6 @@ public class ModelService {
         m.setName(req.name());
         m.setBrand(resolveBrand(req.brandId()));
         m.setCategory(resolveCategory(req.categoryId()));
-        m.setSalePrice(req.salePrice());
         return ModelResponse.from(modelRepo.save(m));
     }
 

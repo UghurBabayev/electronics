@@ -54,19 +54,18 @@ async function loadSettings() {
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>Ad</th><th>Marka</th><th>Kateqoriya</th><th>Satış qiyməti</th><th></th></tr></thead>
+                    <thead><tr><th>Ad</th><th>Marka</th><th>Kateqoriya</th><th></th></tr></thead>
                     <tbody>
                         ${models.map(m => `
                         <tr>
                             <td><strong>${m.name}</strong></td>
                             <td>${m.brand || '—'}</td>
                             <td>${m.category || '—'}</td>
-                            <td>${m.salePrice ? fmt(m.salePrice) : '—'}</td>
                             <td>
                                 <button class="btn btn-ghost btn-sm" onclick="showModelForm(${m.id})">Düzəlt</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteModel(${m.id})">Sil</button>
                             </td>
-                        </tr>`).join('') || '<tr class="empty-row"><td colspan="5">Model yoxdur</td></tr>'}
+                        </tr>`).join('') || '<tr class="empty-row"><td colspan="4">Model yoxdur</td></tr>'}
                     </tbody>
                 </table>
             </div>
@@ -147,8 +146,6 @@ async function showModelForm(id = null) {
                             ${cats.map(c => `<option value="${c.id}" ${m.categoryId==c.id?'selected':''}>${c.name}</option>`).join('')}
                         </select></div>
                 </div>
-                <div class="form-group"><label>Satış qiyməti (₼)</label>
-                    <input id="mod-price" type="number" step="0.01" min="0" value="${m.salePrice || ''}"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeModal()">Ləğv et</button>
@@ -161,8 +158,7 @@ async function saveModel(id) {
     const body = {
         name:       document.getElementById('mod-name').value,
         brandId:    document.getElementById('mod-brand').value || null,
-        categoryId: document.getElementById('mod-cat').value || null,
-        salePrice:  document.getElementById('mod-price').value || null
+        categoryId: document.getElementById('mod-cat').value || null
     };
     try {
         if (id) await API.put('/models/' + id, body);

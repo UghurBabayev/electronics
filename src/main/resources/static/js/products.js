@@ -23,7 +23,7 @@ async function loadProducts() {
                 <table id="prod-table">
                     <thead><tr>
                         <th>Model</th><th>Kateqoriya</th><th>Marka</th>
-                        <th>Alış qiyməti</th><th>Satış qiyməti</th><th>Stok</th><th>Alış tarixi</th><th></th>
+                        <th>Alış qiyməti</th><th>Stok</th><th>Alış tarixi</th><th></th>
                     </tr></thead>
                     <tbody id="prod-body"></tbody>
                 </table>
@@ -38,7 +38,7 @@ async function loadProducts() {
 function renderProductRows(list) {
     const tbody = document.getElementById('prod-body');
     if (!list.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Məhsul tapılmadı</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Məhsul tapılmadı</td></tr>';
         return;
     }
     tbody.innerHTML = list.map(p => `
@@ -47,7 +47,6 @@ function renderProductRows(list) {
             <td>${p.category || '—'}</td>
             <td>${p.brand || '—'}</td>
             <td>${fmt(p.purchasePrice)}</td>
-            <td>${p.salePrice ? fmt(p.salePrice) : '—'}</td>
             <td><span class="badge ${p.quantity > 0 ? 'badge-green' : 'badge-red'}">${p.quantity} ədəd</span></td>
             <td>${fmtDate(p.purchaseDate)}</td>
             <td>
@@ -81,8 +80,7 @@ async function showProductForm(id = null) {
                     <div style="display:flex;gap:6px">
                         <select id="pf-model" style="flex:1" onchange="onModelSelect()">
                             <option value="">Seçin</option>
-                            ${models.map(m => `<option value="${m.id}" ${p.modelId==m.id?'selected':''}
-                                data-sale-price="${m.salePrice || ''}">${m.name}${m.brand ? ' — '+m.brand : ''}</option>`).join('')}
+                            ${models.map(m => `<option value="${m.id}" ${p.modelId==m.id?'selected':''}>${m.name}${m.brand ? ' — '+m.brand : ''}</option>`).join('')}
                         </select>
                         <button type="button" class="btn btn-ghost btn-sm" onclick="quickAddModel()" title="Yeni model">+</button>
                     </div>
@@ -105,14 +103,7 @@ async function showProductForm(id = null) {
         </div>`);
 }
 
-function onModelSelect() {
-    const sel = document.getElementById('pf-model');
-    const opt = sel.options[sel.selectedIndex];
-    const salePrice = opt ? opt.getAttribute('data-sale-price') : '';
-    if (salePrice && !document.getElementById('pf-price').value) {
-        // alış qiyməti boşdursa satış qiymətini göstər (ipucu kimi)
-    }
-}
+function onModelSelect() {}
 
 async function quickAddModel() {
     const cats = window._models.length ? null : await API.get('/categories');
