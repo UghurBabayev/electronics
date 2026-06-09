@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="015-add-created-by-to-products" author="admin">
+        <addColumn tableName="products">
+            <column name="created_by" type="BIGINT">
+                <constraints foreignKeyName="fk_product_created_by" references="users(id)"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="015-add-created-by-to-customers" author="admin">
+        <addColumn tableName="customers">
+            <column name="created_by" type="BIGINT">
+                <constraints foreignKeyName="fk_customer_created_by" references="users(id)"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

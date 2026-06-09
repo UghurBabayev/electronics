@@ -4,6 +4,7 @@ import az.electronika.demo.dto.ProductRequest;
 import az.electronika.demo.dto.ProductResponse;
 import az.electronika.demo.entity.Product;
 import az.electronika.demo.repository.ProductRepository;
+import az.electronika.demo.security.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,18 +16,27 @@ public class ProductService {
 
     private final ProductRepository productRepo;
     private final ModelService modelService;
+    private final SecurityHelper security;
 
     public List<ProductResponse> getAll() {
-        return productRepo.findAll().stream().map(ProductResponse::from).toList();
+        List<Product> list = security.isAdmin()
+                ? productRepo.findAll()
+                : productRepo.findByCreatedByUsername(security.currentUsername());
+        return list.stream().map(ProductResponse::from).toList();
     }
 
     public List<ProductResponse> getInStock() {
-        return productRepo.findInStock().stream().map(ProductResponse::from).toList();
+        List<Product> list = security.isAdmin()
+                ? productRepo.findInStock()
+                : productRepo.findInStockByUser(security.currentUsername());
+        return list.stream().map(ProductResponse::from).toList();
     }
 
     public List<ProductResponse> search(String name) {
-        return productRepo.findByNameContainingIgnoreCase(name)
-                .stream().map(ProductResponse::from).toList();
+        List<Product> list = security.isAdmin()
+                ? productRepo.findByNameContainingIgnoreCase(name)
+                : productRepo.findByCreatedByUsernameAndNameContaining(security.currentUsername(), name);
+        return list.stream().map(ProductResponse::from).toList();
     }
 
     public ProductResponse getById(Long id) {
@@ -40,6 +50,7 @@ public class ProductService {
                 .purchaseDate(req.purchaseDate())
                 .quantity(req.quantity())
                 .description(req.description())
+                .createdBy(security.currentUser())
                 .build();
         return ProductResponse.from(productRepo.save(p));
     }

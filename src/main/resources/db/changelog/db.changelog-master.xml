@@ -19,5 +19,6 @@
     <include file="db/changelog/changes/012-create-models.xml"/>
     <include file="db/changelog/changes/013-alter-products-for-model.xml"/>
     <include file="db/changelog/changes/014-remove-sale-price-from-models-and-products.xml"/>
+    <include file="db/changelog/changes/015-add-created-by-to-products-and-customers.xml"/>
 
 </databaseChangeLog>

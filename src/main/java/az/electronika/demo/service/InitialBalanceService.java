@@ -2,11 +2,9 @@ package az.electronika.demo.service;
 
 import az.electronika.demo.dto.InitialBalanceRequest;
 import az.electronika.demo.entity.InitialBalance;
-import az.electronika.demo.entity.User;
 import az.electronika.demo.repository.InitialBalanceRepository;
-import az.electronika.demo.repository.UserRepository;
+import az.electronika.demo.security.SecurityHelper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,33 +15,31 @@ import java.util.List;
 public class InitialBalanceService {
 
     private final InitialBalanceRepository repo;
-    private final UserRepository userRepo;
+    private final SecurityHelper security;
 
     public List<InitialBalance> getAll() {
-        return repo.findAll();
+        return security.isAdmin()
+                ? repo.findAll()
+                : repo.findByCreatedByUsername(security.currentUsername());
     }
 
     public BigDecimal getTotal() {
-        return repo.sumAllBalances();
+        return security.isAdmin()
+                ? repo.sumAllBalances()
+                : repo.sumBalancesByUser(security.currentUsername());
     }
 
     public InitialBalance create(InitialBalanceRequest req) {
-        User user = currentUser();
         InitialBalance balance = InitialBalance.builder()
                 .amount(req.amount())
                 .balanceDate(req.balanceDate())
                 .note(req.note())
-                .createdBy(user)
+                .createdBy(security.currentUser())
                 .build();
         return repo.save(balance);
     }
 
     public void delete(Long id) {
         repo.deleteById(id);
-    }
-
-    private User currentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepo.findByUsername(username).orElse(null);
     }
 }

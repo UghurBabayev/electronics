@@ -4,6 +4,7 @@ import az.electronika.demo.dto.CustomerRequest;
 import az.electronika.demo.dto.CustomerResponse;
 import az.electronika.demo.entity.Customer;
 import az.electronika.demo.repository.CustomerRepository;
+import az.electronika.demo.security.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,14 +15,20 @@ import java.util.List;
 public class CustomerService {
 
     private final CustomerRepository repo;
+    private final SecurityHelper security;
 
     public List<CustomerResponse> getAll() {
-        return repo.findAll().stream().map(CustomerResponse::from).toList();
+        List<Customer> list = security.isAdmin()
+                ? repo.findAll()
+                : repo.findByCreatedByUsername(security.currentUsername());
+        return list.stream().map(CustomerResponse::from).toList();
     }
 
     public List<CustomerResponse> search(String name) {
-        return repo.findByFullNameContainingIgnoreCase(name)
-                .stream().map(CustomerResponse::from).toList();
+        List<Customer> list = security.isAdmin()
+                ? repo.findByFullNameContainingIgnoreCase(name)
+                : repo.findByCreatedByUsernameAndFullNameContainingIgnoreCase(security.currentUsername(), name);
+        return list.stream().map(CustomerResponse::from).toList();
     }
 
     public CustomerResponse getById(Long id) {
@@ -34,6 +41,7 @@ public class CustomerService {
                 .phone(req.phone())
                 .address(req.address())
                 .note(req.note())
+                .createdBy(security.currentUser())
                 .build();
         return CustomerResponse.from(repo.save(c));
     }

@@ -6,8 +6,8 @@ import az.electronika.demo.entity.*;
 import az.electronika.demo.entity.enums.InstallmentStatus;
 import az.electronika.demo.entity.enums.PaymentType;
 import az.electronika.demo.repository.*;
+import az.electronika.demo.security.SecurityHelper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,20 +23,29 @@ public class SaleService {
     private final SaleRepository saleRepo;
     private final ProductService productService;
     private final CustomerRepository customerRepo;
-    private final UserRepository userRepo;
     private final InstallmentPlanRepository planRepo;
     private final InstallmentPaymentRepository paymentRepo;
+    private final SecurityHelper security;
 
     public List<SaleResponse> getAll() {
-        return saleRepo.findAll().stream().map(SaleResponse::from).toList();
+        List<Sale> list = security.isAdmin()
+                ? saleRepo.findAll()
+                : saleRepo.findByCreatedByUsername(security.currentUsername());
+        return list.stream().map(SaleResponse::from).toList();
     }
 
     public List<SaleResponse> getByCustomer(Long customerId) {
-        return saleRepo.findByCustomerId(customerId).stream().map(SaleResponse::from).toList();
+        List<Sale> list = security.isAdmin()
+                ? saleRepo.findByCustomerId(customerId)
+                : saleRepo.findByCustomerIdAndCreatedByUsername(customerId, security.currentUsername());
+        return list.stream().map(SaleResponse::from).toList();
     }
 
     public List<SaleResponse> getByDateRange(LocalDate from, LocalDate to) {
-        return saleRepo.findBySaleDateBetween(from, to).stream().map(SaleResponse::from).toList();
+        List<Sale> list = security.isAdmin()
+                ? saleRepo.findBySaleDateBetween(from, to)
+                : saleRepo.findByCreatedByUsernameAndSaleDateBetween(security.currentUsername(), from, to);
+        return list.stream().map(SaleResponse::from).toList();
     }
 
     @Transactional
@@ -51,8 +60,6 @@ public class SaleService {
                 ? customerRepo.findById(req.customerId()).orElseThrow(() -> new RuntimeException("Müştəri tapılmadı"))
                 : null;
 
-        User currentUser = currentUser();
-
         Sale sale = Sale.builder()
                 .product(product)
                 .customer(customer)
@@ -61,12 +68,11 @@ public class SaleService {
                 .paymentType(req.paymentType())
                 .quantity(req.quantity())
                 .note(req.note())
-                .createdBy(currentUser)
+                .createdBy(security.currentUser())
                 .build();
 
         sale = saleRepo.save(sale);
 
-        // Stoku azalt
         product.setQuantity(product.getQuantity() - req.quantity());
 
         if (req.paymentType() == PaymentType.CREDIT) {
@@ -104,10 +110,5 @@ public class SaleService {
                     .build());
         }
         paymentRepo.saveAll(payments);
-    }
-
-    private User currentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepo.findByUsername(username).orElse(null);
     }
 }

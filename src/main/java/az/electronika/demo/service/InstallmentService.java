@@ -6,6 +6,7 @@ import az.electronika.demo.entity.InstallmentPlan;
 import az.electronika.demo.entity.enums.InstallmentStatus;
 import az.electronika.demo.repository.InstallmentPaymentRepository;
 import az.electronika.demo.repository.InstallmentPlanRepository;
+import az.electronika.demo.security.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,19 +20,27 @@ public class InstallmentService {
 
     private final InstallmentPlanRepository planRepo;
     private final InstallmentPaymentRepository paymentRepo;
+    private final SecurityHelper security;
 
     public List<InstallmentPlanResponse> getAllActive() {
-        return planRepo.findByStatus(InstallmentStatus.ACTIVE)
-                .stream().map(InstallmentPlanResponse::from).toList();
+        List<InstallmentPlan> list = security.isAdmin()
+                ? planRepo.findByStatus(InstallmentStatus.ACTIVE)
+                : planRepo.findByStatusAndSaleCreatedByUsername(InstallmentStatus.ACTIVE, security.currentUsername());
+        return list.stream().map(InstallmentPlanResponse::from).toList();
     }
 
     public List<InstallmentPlanResponse> getAll() {
-        return planRepo.findAll().stream().map(InstallmentPlanResponse::from).toList();
+        List<InstallmentPlan> list = security.isAdmin()
+                ? planRepo.findAll()
+                : planRepo.findBySaleCreatedByUsername(security.currentUsername());
+        return list.stream().map(InstallmentPlanResponse::from).toList();
     }
 
     public List<InstallmentPlanResponse> getByCustomer(Long customerId) {
-        return planRepo.findBySaleCustomerId(customerId)
-                .stream().map(InstallmentPlanResponse::from).toList();
+        List<InstallmentPlan> list = security.isAdmin()
+                ? planRepo.findBySaleCustomerId(customerId)
+                : planRepo.findBySaleCustomerIdAndSaleCreatedByUsername(customerId, security.currentUsername());
+        return list.stream().map(InstallmentPlanResponse::from).toList();
     }
 
     public InstallmentPlanResponse getById(Long id) {
@@ -41,10 +50,14 @@ public class InstallmentService {
     public List<InstallmentPlanResponse> getOverdue() {
         List<InstallmentPayment> overduePayments =
                 paymentRepo.findByIsPaidFalseAndDueDateBefore(LocalDate.now());
+        String username = security.currentUsername();
+        boolean admin = security.isAdmin();
         return overduePayments.stream()
                 .map(p -> p.getPlan().getId())
                 .distinct()
                 .map(this::findPlanOrThrow)
+                .filter(plan -> admin || plan.getSale().getCreatedBy() != null
+                        && plan.getSale().getCreatedBy().getUsername().equals(username))
                 .map(InstallmentPlanResponse::from)
                 .toList();
     }
