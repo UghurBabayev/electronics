@@ -42,17 +42,18 @@
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({
                     username: document.getElementById('username').value,
                     password: document.getElementById('password').value
                 })
             });
+            const text = await res.text();
+            let data = {};
+            try { data = text ? JSON.parse(text) : {}; } catch (_) {}
             if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Xəta baş verdi');
+                throw new Error(data.error || `Server xətası (${res.status})`);
             }
-            const data = await res.json();
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify({ username: data.username, fullName: data.fullName, role: data.role }));
             window.location.href = '/index.html';

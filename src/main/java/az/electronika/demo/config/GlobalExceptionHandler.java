@@ -31,4 +31,9 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         return ResponseEntity.badRequest().body(Map.of("error", errors));
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleGeneral(Exception ex) {
+        return ResponseEntity.internalServerError().body(Map.of("error", "Server xətası baş verdi"));
+    }
 }
