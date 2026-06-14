@@ -6,10 +6,16 @@
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="014-drop-sale-price-from-models" author="admin">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="models" columnName="sale_price"/>
+        </preConditions>
         <dropColumn tableName="models" columnName="sale_price"/>
     </changeSet>
 
     <changeSet id="014-drop-sale-price-from-products" author="admin">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="products" columnName="sale_price"/>
+        </preConditions>
         <dropColumn tableName="products" columnName="sale_price"/>
     </changeSet>
 
