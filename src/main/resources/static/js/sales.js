@@ -79,9 +79,9 @@ async function showSaleForm() {
             <div class="modal-body">
                 <div id="sale-form-err" class="alert alert-error" style="display:none"></div>
                 <div class="form-group"><label>Məhsul *</label>
-                    <select id="sf-product">
+                    <select id="sf-product" onchange="onSaleProductSelect()">
                         <option value="">Seçin</option>
-                        ${products.map(p => `<option value="${p.id}">${p.modelName || '?'} (${p.quantity} ədəd qaldı)</option>`).join('')}
+                        ${products.map(p => `<option value="${p.id}" data-sale-price="${p.salePrice || ''}">${p.modelName || '?'}${p.salePrice ? ' — '+fmt(p.salePrice) : ''}</option>`).join('')}
                     </select></div>
                 <div class="form-group"><label>Müştəri</label>
                     <select id="sf-customer">
@@ -119,6 +119,13 @@ async function showSaleForm() {
                 <button class="btn btn-primary" onclick="saveSale()">Satışı qeyd et</button>
             </div>
         </div>`);
+}
+
+function onSaleProductSelect() {
+    const sel = document.getElementById('sf-product');
+    const opt = sel.options[sel.selectedIndex];
+    const price = opt ? opt.getAttribute('data-sale-price') : '';
+    if (price) document.getElementById('sf-price').value = price;
 }
 
 function toggleInstallmentFields() {

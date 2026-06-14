@@ -31,6 +31,9 @@ public class Product {
     @Column(nullable = false)
     private Integer quantity = 1;
 
+    @Column(name = "sale_price", precision = 12, scale = 2)
+    private BigDecimal salePrice;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

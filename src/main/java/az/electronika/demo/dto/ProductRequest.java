@@ -10,5 +10,6 @@ public record ProductRequest(
         @NotNull @Positive BigDecimal purchasePrice,
         @NotNull LocalDate purchaseDate,
         @NotNull @Min(1) Integer quantity,
+        BigDecimal salePrice,
         String description
 ) {}

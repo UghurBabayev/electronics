@@ -44,15 +44,22 @@ public class ProductService {
     }
 
     public ProductResponse create(ProductRequest req) {
-        Product p = Product.builder()
-                .model(modelService.findOrThrow(req.modelId()))
-                .purchasePrice(req.purchasePrice())
-                .purchaseDate(req.purchaseDate())
-                .quantity(req.quantity())
-                .description(req.description())
-                .createdBy(security.currentUser())
-                .build();
-        return ProductResponse.from(productRepo.save(p));
+        var model = modelService.findOrThrow(req.modelId());
+        var owner = security.currentUser();
+        // hər unit üçün ayrı yazı yarat
+        Product last = null;
+        for (int i = 0; i < req.quantity(); i++) {
+            last = productRepo.save(Product.builder()
+                    .model(model)
+                    .purchasePrice(req.purchasePrice())
+                    .purchaseDate(req.purchaseDate())
+                    .quantity(1)
+                    .salePrice(req.salePrice())
+                    .description(req.description())
+                    .createdBy(owner)
+                    .build());
+        }
+        return ProductResponse.from(last);
     }
 
     public ProductResponse update(Long id, ProductRequest req) {
@@ -60,7 +67,7 @@ public class ProductService {
         p.setModel(modelService.findOrThrow(req.modelId()));
         p.setPurchasePrice(req.purchasePrice());
         p.setPurchaseDate(req.purchaseDate());
-        p.setQuantity(req.quantity());
+        p.setSalePrice(req.salePrice());
         p.setDescription(req.description());
         return ProductResponse.from(productRepo.save(p));
     }

@@ -23,7 +23,7 @@ async function loadProducts() {
                 <table id="prod-table">
                     <thead><tr>
                         <th>Model</th><th>Kateqoriya</th><th>Marka</th>
-                        <th>Alış qiyməti</th><th>Stok</th><th>Alış tarixi</th><th></th>
+                        <th>Alış qiyməti</th><th>Satış qiyməti</th><th>Status</th><th>Alış tarixi</th><th></th>
                     </tr></thead>
                     <tbody id="prod-body"></tbody>
                 </table>
@@ -38,7 +38,7 @@ async function loadProducts() {
 function renderProductRows(list) {
     const tbody = document.getElementById('prod-body');
     if (!list.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Məhsul tapılmadı</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Məhsul tapılmadı</td></tr>';
         return;
     }
     tbody.innerHTML = list.map(p => `
@@ -47,7 +47,8 @@ function renderProductRows(list) {
             <td>${p.category || '—'}</td>
             <td>${p.brand || '—'}</td>
             <td>${fmt(p.purchasePrice)}</td>
-            <td><span class="badge ${p.quantity > 0 ? 'badge-green' : 'badge-red'}">${p.quantity} ədəd</span></td>
+            <td>${p.salePrice ? fmt(p.salePrice) : '<span style="color:var(--text-muted)">Qoyulmayıb</span>'}</td>
+            <td><span class="badge ${p.quantity > 0 ? 'badge-green' : 'badge-red'}">${p.quantity > 0 ? 'Stokda' : 'Satılıb'}</span></td>
             <td>${fmtDate(p.purchaseDate)}</td>
             <td>
                 <button class="btn btn-ghost btn-sm" onclick="showProductForm(${p.id})">Düzəlt</button>
@@ -59,7 +60,9 @@ function renderProductRows(list) {
 function filterProducts() {
     const q = document.getElementById('prod-search').value.toLowerCase();
     const filtered = window._products.filter(p =>
-        (p.modelName || '').toLowerCase().includes(q)
+        (p.modelName || '').toLowerCase().includes(q) ||
+        (p.brand || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q)
     );
     renderProductRows(filtered);
 }
@@ -67,11 +70,12 @@ function filterProducts() {
 async function showProductForm(id = null) {
     const p = id ? window._products.find(x => x.id === id) : {};
     const models = window._models;
+    const isEdit = id !== null;
 
     openModal(`
         <div class="modal">
             <div class="modal-header">
-                <span class="modal-title">${id ? 'Məhsulu düzəlt' : 'Yeni məhsul (alış)'}</span>
+                <span class="modal-title">${isEdit ? 'Məhsulu düzəlt' : 'Yeni məhsul (alış)'}</span>
                 <button class="modal-close" onclick="closeModal()">×</button>
             </div>
             <div class="modal-body">
@@ -80,25 +84,30 @@ async function showProductForm(id = null) {
                     <div style="display:flex;gap:6px">
                         <select id="pf-model" style="flex:1" onchange="onModelSelect()">
                             <option value="">Seçin</option>
-                            ${models.map(m => `<option value="${m.id}" ${p.modelId==m.id?'selected':''}>${m.name}${m.brand ? ' — '+m.brand : ''}</option>`).join('')}
+                            ${models.map(m => `<option value="${m.id}" ${p?.modelId==m.id?'selected':''}>${m.name}${m.brand ? ' — '+m.brand : ''}</option>`).join('')}
                         </select>
                         <button type="button" class="btn btn-ghost btn-sm" onclick="quickAddModel()" title="Yeni model">+</button>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Alış qiyməti (₼) *</label>
-                        <input id="pf-price" type="number" step="0.01" min="0" value="${p.purchasePrice || ''}"></div>
-                    <div class="form-group"><label>Alış tarixi *</label>
-                        <input id="pf-date" type="date" value="${p.purchaseDate || today()}"></div>
+                        <input id="pf-price" type="number" step="0.01" min="0" value="${p?.purchasePrice || ''}"></div>
+                    <div class="form-group"><label>Satış qiyməti (₼)</label>
+                        <input id="pf-sale-price" type="number" step="0.01" min="0" value="${p?.salePrice || ''}" placeholder="İstəyə bağlı"></div>
                 </div>
-                <div class="form-group"><label>Miqdar *</label>
-                    <input id="pf-qty" type="number" min="1" value="${p.quantity ?? 1}"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Alış tarixi *</label>
+                        <input id="pf-date" type="date" value="${p?.purchaseDate || today()}"></div>
+                    ${!isEdit ? `<div class="form-group"><label>Miqdar *</label>
+                        <input id="pf-qty" type="number" min="1" value="1"
+                            title="Hər unit ayrı sıra kimi əlavə olunur"></div>` : ''}
+                </div>
                 <div class="form-group"><label>Açıqlama</label>
-                    <textarea id="pf-desc" rows="2">${p.description || ''}</textarea></div>
+                    <textarea id="pf-desc" rows="2">${p?.description || ''}</textarea></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeModal()">Ləğv et</button>
-                <button class="btn btn-primary" onclick="saveProduct(${id || 'null'})">Yadda saxla</button>
+                <button class="btn btn-primary" onclick="saveProduct(${id || 'null'})">${isEdit ? 'Yadda saxla' : 'Əlavə et'}</button>
             </div>
         </div>`);
 }
@@ -106,7 +115,6 @@ async function showProductForm(id = null) {
 function onModelSelect() {}
 
 async function quickAddModel() {
-    const cats = window._models.length ? null : await API.get('/categories');
     const [categories, brands] = await Promise.all([
         API.get('/categories'),
         API.get('/brands')
@@ -162,18 +170,20 @@ function reloadProductForm() {
 }
 
 async function saveProduct(id) {
+    const qtyEl = document.getElementById('pf-qty');
     const body = {
         modelId:       document.getElementById('pf-model').value || null,
         purchasePrice: document.getElementById('pf-price').value,
+        salePrice:     document.getElementById('pf-sale-price').value || null,
         purchaseDate:  document.getElementById('pf-date').value,
-        quantity:      parseInt(document.getElementById('pf-qty').value),
+        quantity:      qtyEl ? parseInt(qtyEl.value) : 1,
         description:   document.getElementById('pf-desc').value || null
     };
     try {
         if (id) await API.put('/products/' + id, body);
         else     await API.post('/products', body);
         closeModal();
-        showToast(id ? 'Məhsul yeniləndi' : 'Məhsul əlavə edildi');
+        showToast(id ? 'Məhsul yeniləndi' : (body.quantity > 1 ? `${body.quantity} unit əlavə edildi` : 'Məhsul əlavə edildi'));
         loadProducts();
     } catch (e) {
         document.getElementById('prod-form-err').textContent = e.message;
