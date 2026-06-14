@@ -130,8 +130,6 @@ async function quickAddModel() {
                             ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                         </select></div>
                 </div>
-                <div class="form-group"><label>Satış qiyməti (₼)</label>
-                    <input id="qm-price" type="number" step="0.01" min="0"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="reloadProductForm()">Geri</button>
@@ -145,8 +143,7 @@ async function saveQuickModel() {
         const model = await API.post('/models', {
             name:       document.getElementById('qm-name').value,
             brandId:    document.getElementById('qm-brand').value || null,
-            categoryId: document.getElementById('qm-cat').value || null,
-            salePrice:  document.getElementById('qm-price').value || null
+            categoryId: document.getElementById('qm-cat').value || null
         });
         window._models.push(model);
         showToast('Model əlavə edildi');
