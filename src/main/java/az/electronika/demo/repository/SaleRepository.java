@@ -2,6 +2,7 @@ package az.electronika.demo.repository;
 
 import az.electronika.demo.entity.Sale;
 import az.electronika.demo.entity.enums.PaymentType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,13 +13,24 @@ import java.util.List;
 
 public interface SaleRepository extends JpaRepository<Sale, Long> {
 
+    @EntityGraph(attributePaths = {"product", "product.model", "customer", "createdBy"})
+    List<Sale> findAll();
+
+    @EntityGraph(attributePaths = {"product", "product.model", "customer", "createdBy"})
     List<Sale> findByCustomerId(Long customerId);
+
+    @EntityGraph(attributePaths = {"product", "product.model", "customer", "createdBy"})
     List<Sale> findByCustomerIdAndCreatedByUsername(Long customerId, String username);
 
     List<Sale> findByPaymentType(PaymentType paymentType);
+
+    @EntityGraph(attributePaths = {"product", "product.model", "customer", "createdBy"})
     List<Sale> findByCreatedByUsername(String username);
 
+    @EntityGraph(attributePaths = {"product", "product.model", "customer", "createdBy"})
     List<Sale> findBySaleDateBetween(LocalDate from, LocalDate to);
+
+    @EntityGraph(attributePaths = {"product", "product.model", "customer", "createdBy"})
     List<Sale> findByCreatedByUsernameAndSaleDateBetween(String username, LocalDate from, LocalDate to);
 
     @Query("SELECT COALESCE(SUM(s.salePrice * s.quantity), 0) FROM Sale s WHERE s.saleDate BETWEEN :from AND :to")
