@@ -4,21 +4,22 @@
 Kiçik elektronika mağazası üçün veb əsaslı idarəetmə sistemi. 2-3 nəfər istifadəçi üçün nəzərdə tutulub, hamıya açıq deyil.
 
 ## Stack
-- **Backend:** Java 17 + Spring Boot 3 + Spring Security (JWT)
+- **Backend:** Java 21 + Spring Boot 3 + Spring Security (JWT)
 - **DB:** PostgreSQL + Liquibase (migration-lar `src/main/resources/db/changelog/`)
 - **Frontend:** Vanilla HTML/CSS/JS — Spring Boot-un `static/` qovluğundan serve edilir (ayrı SPA deyil)
+- **Excel:** Apache POI 5.3.0 (`poi-ooxml`)
 - **Deploy:** Railway.app
 
 ## Paket strukturu
 ```
 az.electronika.demo
 ├── controller/     — REST endpoint-lər
-├── service/        — biznes məntiqi
+├── service/        — biznes məntiqi (+ DashboardService, ExcelExportService)
 ├── repository/     — Spring Data JPA
 ├── entity/         — JPA entity-lər
 │   └── enums/      — Role, PaymentType, InstallmentStatus
-├── dto/            — Request/Response DTO-lar
-├── security/       — JwtUtil, JwtFilter, UserDetailsServiceImpl
+├── dto/            — Request/Response DTO-lar (+ DashboardResponse)
+├── security/       — JwtUtil, JwtFilter, UserDetailsServiceImpl, LoginAttemptService
 └── config/         — SecurityConfig, GlobalExceptionHandler
 ```
 
@@ -53,16 +54,18 @@ Yeni cədvəl/dəyişiklik üçün `src/main/resources/db/changelog/changes/` al
 
 ## Frontend
 - `src/main/resources/static/` — bütün HTML/CSS/JS
-- `index.html` — əsas tətbiq (login sonrası)
+- `index.html` — əsas tətbiq (login sonrası); default səhifə `dashboard`
 - `login.html` — giriş səhifəsi
-- `js/api.js` — mərkəzi API helper
-- Hər modul üçün ayrı JS: `products.js`, `sales.js`, `installments.js`, `customers.js`, `reports.js`, `settings.js`, `models.js`
+- `js/api.js` — mərkəzi API helper (`today()`, `firstOfMonth()` qlobal köməkçilər burada)
+- Hər modul üçün ayrı JS: `dashboard.js`, `products.js`, `sales.js`, `installments.js`, `customers.js`, `reports.js`, `settings.js`, `models.js`
 
 ### UI naviqasiya
 | Səhifə | Nə var |
 |---|---|
+| Ana Səhifə | Dashboard: bugünkü satışlar, ümumi borc, stok sayı, gecikmiş nisiyə sayı |
 | Məhsullar | Hər unit ayrı sıra; satış qiyməti, status (Stokda/Satılıb) |
 | Satışlar | Müştəriyə bağlı; məhsul seçiləndə satış qiyməti avtomatik doldurulur |
+| Nisiyə | Gecikmiş planlar qırmızı sol border ilə vurğulanır; nav item-də badge göstərilir |
 | Modellər | Ayrıca CRUD səhifəsi (`models.js`) |
 | Ayarlar | Kateqoriyalar, Markalar, Modellər, İstifadəçilər (ADMIN), Başlanğıc məbləğ |
 
@@ -72,8 +75,10 @@ Yeni cədvəl/dəyişiklik üçün `src/main/resources/db/changelog/changes/` al
 3. **Nisiyə** — aylıq ödəniş cədvəli, `InstallmentStatus` izlənir
 4. **Müştəri bazası** — satış tarixçəsi ilə əlaqəli
 5. **Başlanğıc məbləğ** — kassa başlanğıcı
-6. **Hesabatlar** — mənfəət, borc, inventar (`ReportService`)
+6. **Hesabatlar** — mənfəət, borc, inventar (`ReportService`); Excel ixrac dəstəklənir
 7. **İstifadəçi idarəsi** — ADMIN yaradır; hər USER yalnız öz məhsul/satış/müştəri/borcunu görür
+8. **Dashboard** — `GET /api/dashboard` → `DashboardService`; bugünkü satış, borc, stok, gecikmiş sayı
+9. **Excel export** — `GET /api/reports/export/excel`, `GET /api/installments/export/excel`; Apache POI (`ExcelExportService`)
 
 ## Per-user data izolyasiyası
 - `Product`, `Customer`, `Sale`, `InitialBalance` cədvəllərində `created_by` (FK→`users`) var
@@ -90,10 +95,17 @@ Yeni cədvəl/dəyişiklik üçün `src/main/resources/db/changelog/changes/` al
   ```
 - Migration-larda təhlükəsizlik üçün `preConditions onFail="MARK_RAN"` + `columnExists` istifadə et
 
+## Təhlükəsizlik
+- **Login brute-force qoruması** — `LoginAttemptService` (`security/`): IP üzrə 5 uğursuz cəhd → 15 dəqiqə blok
+- `AuthController` hər login cəhdini izləyir; blok olduqda `429 Too Many Requests` + geri sayım mesajı qaytarır
+- IP `X-Forwarded-For` header-dən oxunur (Railway proxy arxasında düzgün işləyir)
+
 ## Deploy
+`railway up --detach` — `500` xətası verərsə GitHub-a push et, Railway avtomatik deploy edir:
 ```bash
-railway up --detach
+git push origin main
 ```
+- Railway servisi `UghurBabayev/electronics` repo-na bağlıdır (`main` branch)
 - Railway URL: `https://electronics-production.up.railway.app`
 - Build logs Railway dashboard-da izlənir
 
