@@ -35,4 +35,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.quantity > 0 AND p.createdBy.username = :username")
     @EntityGraph(attributePaths = {"model", "model.brand", "model.category", "createdBy"})
     List<Product> findInStockByUser(@Param("username") String username);
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.quantity > 0")
+    long countInStock();
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.quantity > 0 AND p.createdBy.username = :username")
+    long countInStockByUser(@Param("username") String username);
 }

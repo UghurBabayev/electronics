@@ -7,11 +7,17 @@ async function loadInstallments() {
             <div class="page-subtitle">Aktiv nisiyə planları və ödəniş cədvəli</div>
         </div>
         <div class="toolbar" style="margin-bottom:16px">
-            <div class="toolbar-left">
+            <div class="toolbar-left" style="flex-wrap:wrap;gap:8px">
                 <button class="btn btn-ghost btn-sm" onclick="filterInstallments('ALL')" id="f-all">Hamısı</button>
                 <button class="btn btn-ghost btn-sm" onclick="filterInstallments('ACTIVE')" id="f-active">Aktiv</button>
                 <button class="btn btn-ghost btn-sm" onclick="filterInstallments('OVERDUE')" id="f-overdue">Gecikmiş</button>
                 <button class="btn btn-ghost btn-sm" onclick="filterInstallments('COMPLETED')" id="f-completed">Tamamlanmış</button>
+                <button class="btn btn-ghost btn-sm" onclick="exportInstallmentsExcel()" style="margin-left:auto">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Excel ixrac
+                </button>
             </div>
         </div>
         <div id="installment-list"></div>`;
@@ -34,7 +40,7 @@ function renderInstallments(list) {
         return;
     }
     el.innerHTML = list.map(plan => `
-        <div class="card" style="margin-bottom:16px">
+        <div class="card" style="margin-bottom:16px;${plan.status === 'OVERDUE' ? 'border-left:4px solid var(--danger)' : ''}">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
                 <div>
                     <div style="font-weight:700;font-size:16px">${plan.productName}</div>
@@ -80,6 +86,24 @@ async function markPaid(paymentId) {
         showToast('Ödəniş qeyd edildi');
         loadInstallments();
     } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function exportInstallmentsExcel() {
+    try {
+        const res = await fetch('/api/installments/export/excel', {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+        });
+        if (!res.ok) { showToast('Export xətası', 'error'); return; }
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `nisiye-${new Date().toISOString().slice(0,10)}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
 }
 
 function statusBadge(s) {

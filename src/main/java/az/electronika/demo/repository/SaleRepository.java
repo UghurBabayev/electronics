@@ -44,4 +44,10 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     @Query("SELECT COALESCE(SUM(p.purchasePrice * s.quantity), 0) FROM Sale s JOIN s.product p WHERE s.createdBy.username = :username AND s.saleDate BETWEEN :from AND :to")
     BigDecimal sumCostBetweenByUser(@Param("username") String username, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("SELECT COUNT(s) FROM Sale s WHERE s.saleDate = :date")
+    long countByDate(@Param("date") LocalDate date);
+
+    @Query("SELECT COUNT(s) FROM Sale s WHERE s.saleDate = :date AND s.createdBy.username = :username")
+    long countByDateAndUser(@Param("date") LocalDate date, @Param("username") String username);
 }

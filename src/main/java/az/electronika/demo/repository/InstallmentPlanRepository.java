@@ -41,4 +41,10 @@ public interface InstallmentPlanRepository extends JpaRepository<InstallmentPlan
 
     @Query("SELECT COALESCE(SUM(p.totalAmount - p.paidAmount), 0) FROM InstallmentPlan p WHERE p.status = 'ACTIVE' AND p.sale.createdBy.username = :username")
     BigDecimal totalOutstandingDebtByUser(@Param("username") String username);
+
+    @Query("SELECT COUNT(p) FROM InstallmentPlan p WHERE p.status = 'OVERDUE'")
+    long countOverdue();
+
+    @Query("SELECT COUNT(p) FROM InstallmentPlan p WHERE p.status = 'OVERDUE' AND p.sale.createdBy.username = :username")
+    long countOverdueByUser(@Param("username") String username);
 }

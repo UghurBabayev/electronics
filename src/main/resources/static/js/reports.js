@@ -12,6 +12,12 @@ async function loadReports() {
                     <input type="date" id="rep-to" value="${today()}">
                 </div>
                 <button class="btn btn-primary" onclick="fetchReport()">Hesabla</button>
+                <button class="btn btn-ghost" onclick="exportReportExcel()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Excel ixrac
+                </button>
             </div>
         </div>
         <div id="report-result"></div>`;
@@ -60,5 +66,25 @@ async function fetchReport() {
             </div>`;
     } catch (e) {
         el.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+    }
+}
+
+async function exportReportExcel() {
+    const from = document.getElementById('rep-from')?.value || firstOfMonth();
+    const to   = document.getElementById('rep-to')?.value  || today();
+    try {
+        const res = await fetch(`/api/reports/export/excel?from=${from}&to=${to}`, {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+        });
+        if (!res.ok) { showToast('Export xətası', 'error'); return; }
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `hesabat-${from}-${to}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        showToast(e.message, 'error');
     }
 }
