@@ -46,10 +46,9 @@ public class ProductService {
     public ProductResponse create(ProductRequest req) {
         var model = modelService.findOrThrow(req.modelId());
         var owner = security.currentUser();
-        // hər unit üçün ayrı yazı yarat
-        Product last = null;
+        Long lastId = null;
         for (int i = 0; i < req.quantity(); i++) {
-            last = productRepo.save(Product.builder()
+            lastId = productRepo.save(Product.builder()
                     .model(model)
                     .purchasePrice(req.purchasePrice())
                     .purchaseDate(req.purchaseDate())
@@ -57,9 +56,9 @@ public class ProductService {
                     .salePrice(req.salePrice())
                     .description(req.description())
                     .createdBy(owner)
-                    .build());
+                    .build()).getId();
         }
-        return ProductResponse.from(last);
+        return ProductResponse.from(findOrThrow(lastId));
     }
 
     public ProductResponse update(Long id, ProductRequest req) {
@@ -69,7 +68,8 @@ public class ProductService {
         p.setPurchaseDate(req.purchaseDate());
         p.setSalePrice(req.salePrice());
         p.setDescription(req.description());
-        return ProductResponse.from(productRepo.save(p));
+        productRepo.save(p);
+        return ProductResponse.from(findOrThrow(id));
     }
 
     public void delete(Long id) {

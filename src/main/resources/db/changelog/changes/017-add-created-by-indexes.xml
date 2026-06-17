@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="017-add-created-by-indexes" author="admin">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="products" indexName="idx_products_created_by"/></not>
+        </preConditions>
+        <createIndex tableName="products" indexName="idx_products_created_by">
+            <column name="created_by"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="017b-add-created-by-index-customers" author="admin">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="customers" indexName="idx_customers_created_by"/></not>
+        </preConditions>
+        <createIndex tableName="customers" indexName="idx_customers_created_by">
+            <column name="created_by"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="017c-add-created-by-index-sales" author="admin">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="sales" indexName="idx_sales_created_by"/></not>
+        </preConditions>
+        <createIndex tableName="sales" indexName="idx_sales_created_by">
+            <column name="created_by"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="017d-add-created-by-index-balances" author="admin">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="initial_balances" indexName="idx_balances_created_by"/></not>
+        </preConditions>
+        <createIndex tableName="initial_balances" indexName="idx_balances_created_by">
+            <column name="created_by"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

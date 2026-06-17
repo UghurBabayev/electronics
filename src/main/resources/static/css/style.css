@@ -133,3 +133,87 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .payment-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .payment-row:last-child { border-bottom: none; }
 .payment-overdue { color: var(--danger); }
+
+/* ── MOBİL HEADER ── */
+.mobile-header { display: none; }
+
+/* ── SİDEBAR OVERLAY ── */
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; }
+.sidebar-overlay.open { display: block; }
+
+/* ════════════════════════════════
+   RESPONSIVE — 768px və altı
+   ════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* Mobil header */
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: 56px;
+        background: var(--sidebar-bg);
+        padding: 0 16px;
+        z-index: 98;
+        box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .mobile-title { color: #fff; font-size: 17px; font-weight: 700; }
+
+    /* Hamburger düyməsi */
+    .hamburger { background: none; border: none; cursor: pointer; padding: 6px; display: flex; flex-direction: column; gap: 5px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: all .2s; }
+
+    /* Sidebar — sol kənardan gizlənir, açıldıqda sürüşür */
+    .sidebar { transform: translateX(-100%); transition: transform .25s ease; z-index: 100; }
+    .sidebar.open { transform: translateX(0); }
+
+    /* Main content — header-in altından başlayır */
+    .main { margin-left: 0; padding: 76px 14px 24px; }
+
+    /* Cədvəl scroll */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Form row-lar alt-alta */
+    .form-row, .form-row-3 { grid-template-columns: 1fr; gap: 0; }
+
+    /* Stats grid — 2 sütun */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Axtarış input — tam en */
+    .search-input { width: 100%; }
+
+    /* Toolbar — alt-alta */
+    .toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+    .toolbar-left { flex-wrap: wrap; }
+    .toolbar .btn { justify-content: center; }
+
+    /* Tarix aralığı */
+    .date-range input { width: 130px; }
+
+    /* Modal — ekranın 95%-i */
+    .modal { max-width: 100%; border-radius: 12px 12px 0 0; max-height: 95vh; }
+    .modal-overlay { align-items: flex-end; padding: 0; }
+
+    /* Ayarlar grid — alt-alta */
+    #content > div[style*="grid-template-columns:1fr 1fr"] {
+        display: block !important;
+    }
+    #content > div[style*="grid-template-columns:1fr 1fr"] > .card {
+        margin-bottom: 16px;
+    }
+
+    /* Kiçik badge-lər */
+    .badge { font-size: 11px; padding: 2px 6px; }
+
+    /* Düymə sütununu gizlət, action-ları kiçilt */
+    td .btn-sm { padding: 4px 7px; font-size: 11px; }
+}
+
+/* Çox kiçik ekranlar (400px altı) */
+@media (max-width: 400px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .date-range { flex-wrap: wrap; }
+    .date-range input { width: 100%; }
+}

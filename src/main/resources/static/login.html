@@ -51,6 +51,9 @@
             const text = await res.text();
             let data = {};
             try { data = text ? JSON.parse(text) : {}; } catch (_) {}
+            if (res.status === 429) {
+                throw new Error(data.error || 'Çox sayda cəhd. Bir müddət gözləyin.');
+            }
             if (!res.ok) {
                 throw new Error(data.error || `Server xətası (${res.status})`);
             }
