@@ -14,6 +14,10 @@ const API = {
             window.location.href = '/login.html';
             return;
         }
+        if (res.status === 402) {
+            showExpiredScreen();
+            return;
+        }
         if (res.status === 204) return null;
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Xəta baş verdi');
@@ -55,4 +59,21 @@ function openModal(html) {
 
 function closeModal() {
     document.querySelector('.modal-overlay')?.remove();
+}
+
+function showExpiredScreen() {
+    document.body.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;
+                    background:#0f172a;font-family:system-ui,sans-serif">
+            <div style="text-align:center;color:#f1f5f9;max-width:400px;padding:40px">
+                <div style="font-size:48px;margin-bottom:16px">🔒</div>
+                <h2 style="font-size:22px;font-weight:700;margin-bottom:12px">
+                    Lisenziya müddəti bitib
+                </h2>
+                <p style="color:#94a3b8;font-size:15px;line-height:1.6">
+                    Bu proqramın istifadə müddəti başa çatıb.<br>
+                    Davam etmək üçün əlaqə saxlayın.
+                </p>
+            </div>
+        </div>`;
 }
