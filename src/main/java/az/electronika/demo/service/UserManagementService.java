@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -38,6 +39,7 @@ public class UserManagementService {
                 .password(passwordEncoder.encode(req.password()))
                 .role(role)
                 .active(true)
+                .accessUntil(LocalDate.now().plusMonths(1))
                 .build();
         return UserSummaryResponse.from(userRepo.save(user));
     }
@@ -65,6 +67,16 @@ public class UserManagementService {
             if (req.newPassword().length() < 4) throw new RuntimeException("Şifrə minimum 4 simvol olmalıdır");
             user.setPassword(passwordEncoder.encode(req.newPassword()));
         }
+        return UserSummaryResponse.from(userRepo.save(user));
+    }
+
+    public UserSummaryResponse extendAccess(Long id) {
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("İstifadəçi tapılmadı"));
+        LocalDate base = (user.getAccessUntil() != null && user.getAccessUntil().isAfter(LocalDate.now()))
+                ? user.getAccessUntil()
+                : LocalDate.now();
+        user.setAccessUntil(base.plusMonths(1));
         return UserSummaryResponse.from(userRepo.save(user));
     }
 

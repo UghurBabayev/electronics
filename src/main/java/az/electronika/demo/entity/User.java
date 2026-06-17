@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +33,9 @@ public class User {
     @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(name = "access_until")
+    private LocalDate accessUntil;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

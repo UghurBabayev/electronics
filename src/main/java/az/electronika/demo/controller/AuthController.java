@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AccountExpiredException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +40,12 @@ public class AuthController {
             LoginResponse response = authService.login(request);
             attemptService.loginSucceeded(ip);
             return ResponseEntity.ok(response);
+        } catch (AccountExpiredException ex) {
+            // Şifrə düzgündür, amma müddət bitib — uğursuz cəhd kimi sayılmır
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "error", "İstifadə müddətiniz bitib. Admin ilə əlaqə saxlayın.",
+                            "expired", true));
         } catch (AuthenticationException ex) {
             attemptService.loginFailed(ip);
             if (attemptService.isBlocked(ip)) {

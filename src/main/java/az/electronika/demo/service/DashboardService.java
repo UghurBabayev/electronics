@@ -4,6 +4,7 @@ import az.electronika.demo.dto.DashboardResponse;
 import az.electronika.demo.repository.InstallmentPlanRepository;
 import az.electronika.demo.repository.ProductRepository;
 import az.electronika.demo.repository.SaleRepository;
+import az.electronika.demo.repository.UserRepository;
 import az.electronika.demo.security.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class DashboardService {
     private final SaleRepository saleRepo;
     private final ProductRepository productRepo;
     private final InstallmentPlanRepository planRepo;
+    private final UserRepository userRepo;
     private final SecurityHelper security;
 
     public DashboardResponse get() {
@@ -45,6 +47,13 @@ public class DashboardService {
                 ? planRepo.countOverdue()
                 : planRepo.countOverdueByUser(username);
 
-        return new DashboardResponse(todaySaleCount, todaySaleAmount, totalDebt, inStockCount, overdueCount);
+        long expiredUserCount   = admin ? userRepo.countExpiredUsers(today) : 0;
+        long expiringSoonCount  = admin ? userRepo.countExpiringSoonUsers(today, today.plusDays(7)) : 0;
+
+        return new DashboardResponse(
+                todaySaleCount, todaySaleAmount, totalDebt,
+                inStockCount, overdueCount,
+                expiredUserCount, expiringSoonCount
+        );
     }
 }

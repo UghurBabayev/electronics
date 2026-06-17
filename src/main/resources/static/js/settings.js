@@ -94,7 +94,7 @@ async function loadSettings() {
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>Ad Soyad</th><th>İstifadəçi adı</th><th>Rol</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>Ad Soyad</th><th>İstifadəçi adı</th><th>Rol</th><th>Status</th><th>Müddət</th><th></th></tr></thead>
                     <tbody>
                         ${users.map(u => `
                         <tr>
@@ -102,11 +102,13 @@ async function loadSettings() {
                             <td>${u.username}</td>
                             <td><span class="badge ${u.role==='ADMIN'?'badge-blue':'badge-gray'}">${u.role}</span></td>
                             <td><span class="badge ${u.active?'badge-green':'badge-red'}">${u.active?'Aktiv':'Deaktiv'}</span></td>
+                            <td>${accessUntilCell(u.accessUntil)}</td>
                             <td>
                                 <button class="btn btn-ghost btn-sm" onclick="showUserForm(${JSON.stringify(u).replace(/"/g,'&quot;')})">Düzəlt</button>
+                                <button class="btn btn-primary btn-sm" onclick="extendUserAccess(${u.id})" title="1 ay uzat">+1 ay</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${u.username}')">Sil</button>
                             </td>
-                        </tr>`).join('') || '<tr class="empty-row"><td colspan="5">İstifadəçi yoxdur</td></tr>'}
+                        </tr>`).join('') || '<tr class="empty-row"><td colspan="6">İstifadəçi yoxdur</td></tr>'}
                     </tbody>
                 </table>
             </div>
@@ -347,4 +349,24 @@ async function deleteUser(id, username) {
     if (!confirm(`"${username}" istifadəçisi silinsin? Bu əməliyyat geri alına bilməz.`)) return;
     try { await API.delete('/users/' + id); showToast('İstifadəçi silindi'); loadSettings(); }
     catch (e) { showToast(e.message, 'error'); }
+}
+
+async function extendUserAccess(id) {
+    try {
+        await API.post('/users/' + id + '/extend');
+        showToast('Müddət 1 ay uzadıldı');
+        loadSettings();
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+function accessUntilCell(dateStr) {
+    if (!dateStr) return '<span style="color:var(--text-muted)">Limitsiz</span>';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const until = new Date(dateStr);
+    const diffDays = Math.ceil((until - today) / 86400000);
+    if (diffDays < 0)
+        return `<span style="color:var(--danger);font-weight:600">Bitib (${fmtDate(dateStr)})</span>`;
+    if (diffDays <= 7)
+        return `<span style="color:#f59e0b;font-weight:600">${diffDays} gün qalıb</span>`;
+    return `<span style="color:var(--text-muted)">${fmtDate(dateStr)}</span>`;
 }

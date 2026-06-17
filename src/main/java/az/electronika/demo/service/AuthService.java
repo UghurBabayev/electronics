@@ -6,11 +6,14 @@ import az.electronika.demo.entity.User;
 import az.electronika.demo.repository.UserRepository;
 import az.electronika.demo.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AccountExpiredException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -26,10 +29,14 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
 
+        User user = userRepository.findByUsername(request.username()).orElseThrow();
+
+        if (user.getAccessUntil() != null && LocalDate.now().isAfter(user.getAccessUntil())) {
+            throw new AccountExpiredException("expired");
+        }
+
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
         String token = jwtUtil.generateToken(userDetails);
-
-        User user = userRepository.findByUsername(request.username()).orElseThrow();
 
         return new LoginResponse(
                 token,

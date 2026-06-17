@@ -7,5 +7,7 @@ public record DashboardResponse(
         BigDecimal todaySaleAmount,
         BigDecimal totalDebt,
         long inStockCount,
-        long overdueCount
+        long overdueCount,
+        long expiredUserCount,
+        long expiringSoonUserCount
 ) {}

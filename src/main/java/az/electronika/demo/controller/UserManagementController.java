@@ -36,6 +36,11 @@ public class UserManagementController {
         return ResponseEntity.ok(service.update(id, req));
     }
 
+    @PostMapping("/{id}/extend")
+    public ResponseEntity<UserSummaryResponse> extendAccess(@PathVariable Long id) {
+        return ResponseEntity.ok(service.extendAccess(id));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
