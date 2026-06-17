@@ -1,7 +1,7 @@
 package az.electronika.demo.controller;
 
 import az.electronika.demo.dto.InitialBalanceRequest;
-import az.electronika.demo.entity.InitialBalance;
+import az.electronika.demo.dto.InitialBalanceResponse;
 import az.electronika.demo.service.InitialBalanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class InitialBalanceController {
     private final InitialBalanceService service;
 
     @GetMapping
-    public List<InitialBalance> getAll() {
+    public List<InitialBalanceResponse> getAll() {
         return service.getAll();
     }
 
@@ -29,7 +29,7 @@ public class InitialBalanceController {
     }
 
     @PostMapping
-    public ResponseEntity<InitialBalance> create(@Valid @RequestBody InitialBalanceRequest req) {
+    public ResponseEntity<InitialBalanceResponse> create(@Valid @RequestBody InitialBalanceRequest req) {
         return ResponseEntity.ok(service.create(req));
     }
 

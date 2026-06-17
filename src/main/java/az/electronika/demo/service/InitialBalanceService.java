@@ -1,6 +1,7 @@
 package az.electronika.demo.service;
 
 import az.electronika.demo.dto.InitialBalanceRequest;
+import az.electronika.demo.dto.InitialBalanceResponse;
 import az.electronika.demo.entity.InitialBalance;
 import az.electronika.demo.repository.InitialBalanceRepository;
 import az.electronika.demo.security.SecurityHelper;
@@ -17,10 +18,11 @@ public class InitialBalanceService {
     private final InitialBalanceRepository repo;
     private final SecurityHelper security;
 
-    public List<InitialBalance> getAll() {
-        return security.isAdmin()
+    public List<InitialBalanceResponse> getAll() {
+        List<InitialBalance> list = security.isAdmin()
                 ? repo.findAll()
                 : repo.findByCreatedByUsername(security.currentUsername());
+        return list.stream().map(InitialBalanceResponse::from).toList();
     }
 
     public BigDecimal getTotal() {
@@ -29,14 +31,15 @@ public class InitialBalanceService {
                 : repo.sumBalancesByUser(security.currentUsername());
     }
 
-    public InitialBalance create(InitialBalanceRequest req) {
+    public InitialBalanceResponse create(InitialBalanceRequest req) {
         InitialBalance balance = InitialBalance.builder()
                 .amount(req.amount())
                 .balanceDate(req.balanceDate())
                 .note(req.note())
                 .createdBy(security.currentUser())
                 .build();
-        return repo.save(balance);
+        Long id = repo.save(balance).getId();
+        return InitialBalanceResponse.from(repo.findById(id).orElseThrow());
     }
 
     public void delete(Long id) {
