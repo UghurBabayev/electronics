@@ -1,12 +1,21 @@
 async function loadSettings() {
+    document.getElementById('content').innerHTML =
+        '<div style="color:var(--text-muted);padding:40px;text-align:center">Yüklənir...</div>';
     const isAdmin = (JSON.parse(localStorage.getItem('user') || '{}').role === 'ADMIN');
-    const [cats, brands, models, balances, users] = await Promise.all([
-        API.get('/categories'),
-        API.get('/brands'),
-        API.get('/models'),
-        API.get('/balances'),
-        isAdmin ? API.get('/users') : Promise.resolve(null)
-    ]);
+    let cats, brands, models, balances, users;
+    try {
+        [cats, brands, models, balances, users] = await Promise.all([
+            API.get('/categories'),
+            API.get('/brands'),
+            API.get('/models'),
+            API.get('/balances'),
+            isAdmin ? API.get('/users') : Promise.resolve(null)
+        ]);
+    } catch (e) {
+        document.getElementById('content').innerHTML =
+            `<div class="alert alert-error">${e.message}</div>`;
+        return;
+    }
 
     document.getElementById('content').innerHTML = `
         <div class="page-header">
