@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -18,11 +16,19 @@ public class ProductController {
     private final ProductService service;
 
     @GetMapping
-    public List<ProductResponse> getAll(@RequestParam(required = false) String search,
-                                        @RequestParam(required = false) Boolean inStock) {
-        if (search != null && !search.isBlank()) return service.search(search);
-        if (Boolean.TRUE.equals(inStock)) return service.getInStock();
-        return service.getAll();
+    public ResponseEntity<?> getAll(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean inStock,
+            @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        // Used only by the sale form dropdown — returns a plain list
+        if (Boolean.TRUE.equals(inStock)) return ResponseEntity.ok(service.getInStock());
+
+        return ResponseEntity.ok(service.getPage(search, brandId, categoryId, status, page, size));
     }
 
     @GetMapping("/{id}")

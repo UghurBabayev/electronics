@@ -1,5 +1,6 @@
 package az.electronika.demo.service;
 
+import az.electronika.demo.dto.PageResponse;
 import az.electronika.demo.dto.SaleRequest;
 import az.electronika.demo.dto.SaleResponse;
 import az.electronika.demo.entity.*;
@@ -7,7 +8,15 @@ import az.electronika.demo.entity.enums.InstallmentStatus;
 import az.electronika.demo.entity.enums.PaymentType;
 import az.electronika.demo.repository.*;
 import az.electronika.demo.security.SecurityHelper;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,24 +36,50 @@ public class SaleService {
     private final InstallmentPaymentRepository paymentRepo;
     private final SecurityHelper security;
 
-    public List<SaleResponse> getAll() {
-        List<Sale> list = security.isAdmin()
-                ? saleRepo.findAll()
-                : saleRepo.findByCreatedByUsername(security.currentUsername());
-        return list.stream().map(SaleResponse::from).toList();
+    @Transactional(readOnly = true)
+    public PageResponse<SaleResponse> getPage(LocalDate from, LocalDate to,
+                                               Long customerId, PaymentType paymentType,
+                                               String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Specification<Sale> spec = buildSpec(from, to, customerId, paymentType, search);
+        Page<Sale> result = saleRepo.findAll(spec, pageable);
+        return PageResponse.of(result.map(SaleResponse::from));
+    }
+
+    private Specification<Sale> buildSpec(LocalDate from, LocalDate to,
+                                           Long customerId, PaymentType paymentType, String search) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (!security.isAdmin()) {
+                predicates.add(cb.equal(root.get("createdBy").get("username"), security.currentUsername()));
+            }
+            if (from != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("saleDate"), from));
+            }
+            if (to != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("saleDate"), to));
+            }
+            if (customerId != null) {
+                predicates.add(cb.equal(root.get("customer").get("id"), customerId));
+            }
+            if (paymentType != null) {
+                predicates.add(cb.equal(root.get("paymentType"), paymentType));
+            }
+            if (search != null && !search.isBlank()) {
+                Join<?, ?> product = root.join("product", JoinType.LEFT);
+                Join<?, ?> model = product.join("model", JoinType.LEFT);
+                predicates.add(cb.like(cb.lower(model.get("name")), "%" + search.toLowerCase() + "%"));
+            }
+
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 
     public List<SaleResponse> getByCustomer(Long customerId) {
         List<Sale> list = security.isAdmin()
                 ? saleRepo.findByCustomerId(customerId)
                 : saleRepo.findByCustomerIdAndCreatedByUsername(customerId, security.currentUsername());
-        return list.stream().map(SaleResponse::from).toList();
-    }
-
-    public List<SaleResponse> getByDateRange(LocalDate from, LocalDate to) {
-        List<Sale> list = security.isAdmin()
-                ? saleRepo.findBySaleDateBetween(from, to)
-                : saleRepo.findByCreatedByUsernameAndSaleDateBetween(security.currentUsername(), from, to);
         return list.stream().map(SaleResponse::from).toList();
     }
 
@@ -72,7 +107,6 @@ public class SaleService {
                 .build();
 
         sale = saleRepo.save(sale);
-
         product.setQuantity(product.getQuantity() - req.quantity());
 
         if (req.paymentType() == PaymentType.CREDIT) {

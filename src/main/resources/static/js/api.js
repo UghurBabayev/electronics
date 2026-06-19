@@ -49,6 +49,7 @@ function showToast(msg, type = 'success') {
 }
 
 function openModal(html) {
+    closeModal();
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = html;
@@ -58,7 +59,35 @@ function openModal(html) {
 }
 
 function closeModal() {
-    document.querySelector('.modal-overlay')?.remove();
+    document.querySelectorAll('.modal-overlay').forEach(e => e.remove());
+}
+
+function renderPagination(containerId, currentPage, totalPages, totalElements, size, fnName) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+    let html = '<div class="pagination">';
+    html += `<button class="btn btn-ghost btn-sm" ${currentPage === 0 ? 'disabled' : ''} onclick="${fnName}(${currentPage - 1})">← Əvvəlki</button>`;
+
+    let last = -1;
+    for (let i = 0; i < totalPages; i++) {
+        const near = Math.abs(i - currentPage) <= 1 || i === 0 || i === totalPages - 1;
+        if (near) {
+            if (last >= 0 && i > last + 1) html += '<span style="padding:0 2px;color:var(--text-muted);line-height:30px">…</span>';
+            html += `<button class="btn ${i === currentPage ? 'btn-primary' : 'btn-ghost'} btn-sm" onclick="${fnName}(${i})">${i + 1}</button>`;
+            last = i;
+        }
+    }
+
+    html += `<button class="btn btn-ghost btn-sm" ${currentPage >= totalPages - 1 ? 'disabled' : ''} onclick="${fnName}(${currentPage + 1})">Sonrakı →</button>`;
+    html += '</div>';
+
+    const from = currentPage * size + 1;
+    const to = Math.min((currentPage + 1) * size, totalElements);
+    html += `<div class="pagination-info">${from}–${to} / ${totalElements} nəticə</div>`;
+
+    el.innerHTML = html;
 }
 
 function showExpiredScreen() {

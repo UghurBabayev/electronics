@@ -19,6 +19,8 @@ public class BrandService {
     }
 
     public Brand create(BrandRequest req) {
+        if (repo.findByName(req.name()).isPresent())
+            throw new RuntimeException("Bu adda marka artıq mövcuddur: " + req.name());
         Brand brand = Brand.builder().name(req.name()).build();
         return repo.save(brand);
     }

@@ -1,5 +1,8 @@
+let _saleSearchTimer = null;
+
 async function loadSales() {
-    const sales = await API.get('/sales');
+    const customers = await API.get('/customers');
+    window._customers = customers;
 
     document.getElementById('content').innerHTML = `
         <div class="page-header">
@@ -10,9 +13,9 @@ async function loadSales() {
             <div class="toolbar">
                 <div class="toolbar-left">
                     <div class="date-range">
-                        <input type="date" id="sale-from" value="${firstOfMonth()}" onchange="filterSalesByDate()">
+                        <input type="date" id="sale-from" value="${firstOfMonth()}" onchange="loadSalesPage(0)">
                         <span>—</span>
-                        <input type="date" id="sale-to" value="${today()}" onchange="filterSalesByDate()">
+                        <input type="date" id="sale-to" value="${today()}" onchange="loadSalesPage(0)">
                     </div>
                 </div>
                 <button class="btn btn-primary" onclick="showSaleForm()">
@@ -20,30 +23,83 @@ async function loadSales() {
                     Yeni satış
                 </button>
             </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Məhsul</label>
+                    <input type="text" id="sale-search" placeholder="Model axtar..." oninput="onSaleSearch()">
+                </div>
+                <div class="filter-group">
+                    <label>Müştəri</label>
+                    <select id="sale-customer-filter" onchange="loadSalesPage(0)">
+                        <option value="">Hamısı</option>
+                        ${customers.map(c => `<option value="${c.id}">${c.fullName}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Ödəniş növü</label>
+                    <select id="sale-type-filter" onchange="loadSalesPage(0)">
+                        <option value="">Hamısı</option>
+                        <option value="CASH">Nağd</option>
+                        <option value="CREDIT">Nisiyə</option>
+                    </select>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="clearSaleFilters()">Sıfırla</button>
+            </div>
             <div class="table-wrap">
                 <table>
                     <thead><tr>
-                        <th>Məhsul</th><th>Müştəri</th><th>Satış qiyməti</th>
+                        <th>Məhsul</th><th>Marka</th><th>Müştəri</th><th>Satış qiyməti</th>
                         <th>Ödəniş</th><th>Miqdar</th><th>Tarix</th>
                     </tr></thead>
                     <tbody id="sale-body"></tbody>
                 </table>
             </div>
+            <div id="sale-pagination"></div>
         </div>`;
 
-    window._sales = sales;
-    renderSaleRows(sales);
+    await loadSalesPage(0);
+}
+
+function clearSaleFilters() {
+    const ids = ['sale-search', 'sale-customer-filter', 'sale-type-filter'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    loadSalesPage(0);
+}
+
+function onSaleSearch() {
+    clearTimeout(_saleSearchTimer);
+    _saleSearchTimer = setTimeout(() => loadSalesPage(0), 300);
+}
+
+async function loadSalesPage(page) {
+    const from       = document.getElementById('sale-from')?.value || firstOfMonth();
+    const to         = document.getElementById('sale-to')?.value || today();
+    const search     = document.getElementById('sale-search')?.value?.trim() || '';
+    const customerId = document.getElementById('sale-customer-filter')?.value || '';
+    const payType    = document.getElementById('sale-type-filter')?.value || '';
+
+    const params = new URLSearchParams({ from, to, page, size: 20 });
+    if (search)     params.append('search', search);
+    if (customerId) params.append('customerId', customerId);
+    if (payType)    params.append('paymentType', payType);
+
+    try {
+        const data = await API.get('/sales?' + params);
+        renderSaleRows(data.content);
+        renderPagination('sale-pagination', data.page, data.totalPages, data.totalElements, data.size, 'loadSalesPage');
+    } catch (e) { showToast(e.message, 'error'); }
 }
 
 function renderSaleRows(list) {
     const tbody = document.getElementById('sale-body');
-    if (!list.length) {
+    if (!list || !list.length) {
         tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Satış tapılmadı</td></tr>';
         return;
     }
     tbody.innerHTML = list.map(s => `
         <tr>
-            <td><strong>${s.productName}</strong></td>
+            <td><strong>${s.productName || '—'}</strong></td>
+            <td>${s.brandName || '—'}</td>
             <td>${s.customerName || '—'}</td>
             <td>${fmt(s.salePrice)}</td>
             <td><span class="badge ${s.paymentType === 'CASH' ? 'badge-green' : 'badge-orange'}">
@@ -51,17 +107,6 @@ function renderSaleRows(list) {
             <td>${s.quantity}</td>
             <td>${fmtDate(s.saleDate)}</td>
         </tr>`).join('');
-}
-
-async function filterSalesByDate() {
-    const from = document.getElementById('sale-from').value;
-    const to   = document.getElementById('sale-to').value;
-    if (!from || !to) return;
-    try {
-        const sales = await API.get(`/sales?from=${from}&to=${to}`);
-        window._sales = sales;
-        renderSaleRows(sales);
-    } catch (e) { showToast(e.message, 'error'); }
 }
 
 async function showSaleForm() {
@@ -81,7 +126,10 @@ async function showSaleForm() {
                 <div class="form-group"><label>Məhsul *</label>
                     <select id="sf-product" onchange="onSaleProductSelect()">
                         <option value="">Seçin</option>
-                        ${products.map(p => `<option value="${p.id}" data-sale-price="${p.salePrice || ''}">${p.modelName || '?'}${p.salePrice ? ' — '+fmt(p.salePrice) : ''}</option>`).join('')}
+                        ${products.map(p => {
+                            const label = [p.brand, p.modelName].filter(Boolean).join(' — ');
+                            return `<option value="${p.id}" data-sale-price="${p.salePrice || ''}">${label || '?'}${p.salePrice ? ' · '+fmt(p.salePrice) : ''}</option>`;
+                        }).join('')}
                     </select></div>
                 <div class="form-group"><label>Müştəri</label>
                     <select id="sf-customer">
@@ -150,7 +198,7 @@ async function saveSale() {
         await API.post('/sales', body);
         closeModal();
         showToast('Satış qeyd edildi');
-        loadSales();
+        loadSalesPage(0);
     } catch (e) {
         document.getElementById('sale-form-err').textContent = e.message;
         document.getElementById('sale-form-err').style.display = 'block';

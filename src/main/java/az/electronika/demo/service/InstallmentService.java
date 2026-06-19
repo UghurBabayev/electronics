@@ -63,7 +63,7 @@ public class InstallmentService {
     }
 
     @Transactional
-    public InstallmentPlanResponse markPaymentPaid(Long paymentId) {
+    public InstallmentPlanResponse markPaymentPaid(Long paymentId, java.math.BigDecimal amount) {
         InstallmentPayment payment = paymentRepo.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("Ödəniş tapılmadı: " + paymentId));
 
@@ -71,12 +71,24 @@ public class InstallmentService {
             throw new RuntimeException("Bu ödəniş artıq ödənilib");
         }
 
-        payment.setPaid(true);
-        payment.setPaidDate(LocalDate.now());
+        java.math.BigDecimal remaining = payment.getAmount().subtract(payment.getPaidAmount());
+        if (amount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Məbləğ sıfırdan böyük olmalıdır");
+        }
+        if (amount.compareTo(remaining) > 0) {
+            throw new RuntimeException("Ödəniş məbləği qalıqdan böyük ola bilməz: " + remaining + " ₼");
+        }
+
+        payment.setPaidAmount(payment.getPaidAmount().add(amount));
+
+        if (payment.getPaidAmount().compareTo(payment.getAmount()) >= 0) {
+            payment.setPaid(true);
+            payment.setPaidDate(LocalDate.now());
+        }
         paymentRepo.save(payment);
 
         InstallmentPlan plan = payment.getPlan();
-        plan.setPaidAmount(plan.getPaidAmount().add(payment.getAmount()));
+        plan.setPaidAmount(plan.getPaidAmount().add(amount));
 
         boolean allPaid = plan.getPayments().stream().allMatch(InstallmentPayment::isPaid);
         if (allPaid) {

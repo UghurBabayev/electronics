@@ -40,8 +40,12 @@ public class InstallmentController {
     }
 
     @PostMapping("/payments/{paymentId}/pay")
-    public ResponseEntity<InstallmentPlanResponse> markPaid(@PathVariable Long paymentId) {
-        return ResponseEntity.ok(service.markPaymentPaid(paymentId));
+    public ResponseEntity<InstallmentPlanResponse> markPaid(
+            @PathVariable Long paymentId,
+            @RequestBody java.util.Map<String, java.math.BigDecimal> body) {
+        java.math.BigDecimal amount = body.get("amount");
+        if (amount == null) throw new RuntimeException("Məbləğ göstərilməlidir");
+        return ResponseEntity.ok(service.markPaymentPaid(paymentId, amount));
     }
 
     @GetMapping("/export/excel")

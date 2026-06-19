@@ -1,13 +1,24 @@
 package az.electronika.demo.service;
 
+import az.electronika.demo.dto.PageResponse;
 import az.electronika.demo.dto.ProductRequest;
 import az.electronika.demo.dto.ProductResponse;
 import az.electronika.demo.entity.Product;
 import az.electronika.demo.repository.ProductRepository;
 import az.electronika.demo.security.SecurityHelper;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,24 +29,51 @@ public class ProductService {
     private final ModelService modelService;
     private final SecurityHelper security;
 
-    public List<ProductResponse> getAll() {
-        List<Product> list = security.isAdmin()
-                ? productRepo.findAll()
-                : productRepo.findByCreatedByUsername(security.currentUsername());
-        return list.stream().map(ProductResponse::from).toList();
+    @Transactional(readOnly = true)
+    public PageResponse<ProductResponse> getPage(String search, Long brandId, Long categoryId,
+                                                  String status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Specification<Product> spec = buildSpec(search, brandId, categoryId, status);
+        Page<Product> result = productRepo.findAll(spec, pageable);
+        return PageResponse.of(result.map(ProductResponse::from));
+    }
+
+    private Specification<Product> buildSpec(String search, Long brandId, Long categoryId, String status) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (!security.isAdmin()) {
+                predicates.add(cb.equal(root.get("createdBy").get("username"), security.currentUsername()));
+            }
+
+            boolean needsModel = (search != null && !search.isBlank()) || brandId != null || categoryId != null;
+            if (needsModel) {
+                Join<?, ?> model = root.join("model", JoinType.LEFT);
+                if (search != null && !search.isBlank()) {
+                    predicates.add(cb.like(cb.lower(model.get("name")), "%" + search.toLowerCase() + "%"));
+                }
+                if (brandId != null) {
+                    predicates.add(cb.equal(model.get("brand").get("id"), brandId));
+                }
+                if (categoryId != null) {
+                    predicates.add(cb.equal(model.get("category").get("id"), categoryId));
+                }
+            }
+
+            if ("IN_STOCK".equals(status)) {
+                predicates.add(cb.greaterThan(root.get("quantity"), 0));
+            } else if ("SOLD".equals(status)) {
+                predicates.add(cb.equal(root.get("quantity"), 0));
+            }
+
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 
     public List<ProductResponse> getInStock() {
         List<Product> list = security.isAdmin()
                 ? productRepo.findInStock()
                 : productRepo.findInStockByUser(security.currentUsername());
-        return list.stream().map(ProductResponse::from).toList();
-    }
-
-    public List<ProductResponse> search(String name) {
-        List<Product> list = security.isAdmin()
-                ? productRepo.findByNameContainingIgnoreCase(name)
-                : productRepo.findByCreatedByUsernameAndNameContaining(security.currentUsername(), name);
         return list.stream().map(ProductResponse::from).toList();
     }
 

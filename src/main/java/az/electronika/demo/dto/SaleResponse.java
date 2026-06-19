@@ -11,6 +11,7 @@ public record SaleResponse(
         Long id,
         Long productId,
         String productName,
+        String brandName,
         Long customerId,
         String customerName,
         BigDecimal salePrice,
@@ -21,10 +22,12 @@ public record SaleResponse(
         LocalDateTime createdAt
 ) {
     public static SaleResponse from(Sale s) {
+        var model = s.getProduct().getModel();
         return new SaleResponse(
                 s.getId(),
                 s.getProduct().getId(),
-                s.getProduct().getModel() != null ? s.getProduct().getModel().getName() : null,
+                model != null ? model.getName() : null,
+                model != null && model.getBrand() != null ? model.getBrand().getName() : null,
                 s.getCustomer() != null ? s.getCustomer().getId() : null,
                 s.getCustomer() != null ? s.getCustomer().getFullName() : null,
                 s.getSalePrice(), s.getSaleDate(), s.getPaymentType(),

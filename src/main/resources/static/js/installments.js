@@ -63,29 +63,69 @@ function renderInstallments(list) {
             </div>
             <div style="border-top:1px solid var(--border);padding-top:12px">
                 <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Ödəniş cədvəli</div>
-                ${plan.payments.map(pay => `
+                ${plan.payments.map(pay => {
+                    const remaining = (pay.amount - (pay.paidAmount || 0)).toFixed(2);
+                    const isPartial = !pay.isPaid && pay.paidAmount > 0;
+                    return `
                     <div class="payment-row">
                         <div>
                             <span class="${isOverdue(pay) ? 'payment-overdue' : ''}">${fmtDate(pay.dueDate)}</span>
                             ${isOverdue(pay) ? '<span class="badge badge-red" style="margin-left:6px;font-size:10px">Gecikmiş</span>' : ''}
                         </div>
-                        <div style="display:flex;align-items:center;gap:10px">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                             <span style="font-weight:600">${fmt(pay.amount)}</span>
                             ${pay.isPaid
                                 ? `<span class="badge badge-green">Ödənilib ${fmtDate(pay.paidDate)}</span>`
-                                : `<button class="btn btn-success btn-sm" onclick="markPaid(${pay.id})">Ödənildi</button>`}
+                                : isPartial
+                                    ? `<span class="badge badge-orange" style="background:#f59e0b;color:#fff">Qismən: ${fmt(pay.paidAmount)}</span>
+                                       <button class="btn btn-success btn-sm" onclick="showPayDialog(${pay.id}, ${remaining})">Qalanı ödə (${fmt(remaining)})</button>`
+                                    : `<button class="btn btn-success btn-sm" onclick="showPayDialog(${pay.id}, ${pay.amount})">Ödənildi</button>`}
                         </div>
-                    </div>`).join('')}
+                    </div>`;
+                }).join('')}
             </div>
         </div>`).join('');
 }
 
-async function markPaid(paymentId) {
+function showPayDialog(paymentId, maxAmount) {
+    openModal(`
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Ödəniş qeyd et</span>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="pay-dialog-err" class="alert alert-error" style="display:none"></div>
+                <div class="form-group">
+                    <label>Ödənilən məbləğ (₼) — maksimum ${fmt(maxAmount)}</label>
+                    <input id="pay-amount" type="number" step="0.01" min="0.01"
+                           max="${maxAmount}" value="${maxAmount}">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Ləğv et</button>
+                <button class="btn btn-success" onclick="submitPayment(${paymentId})">Qeyd et</button>
+            </div>
+        </div>`);
+    setTimeout(() => document.getElementById('pay-amount')?.select(), 50);
+}
+
+async function submitPayment(paymentId) {
+    const amount = parseFloat(document.getElementById('pay-amount').value);
+    if (!amount || amount <= 0) {
+        document.getElementById('pay-dialog-err').textContent = 'Düzgün məbləğ daxil edin';
+        document.getElementById('pay-dialog-err').style.display = 'block';
+        return;
+    }
     try {
-        await API.post(`/installments/payments/${paymentId}/pay`);
+        await API.post(`/installments/payments/${paymentId}/pay`, { amount });
+        closeModal();
         showToast('Ödəniş qeyd edildi');
         loadInstallments();
-    } catch (e) { showToast(e.message, 'error'); }
+    } catch (e) {
+        document.getElementById('pay-dialog-err').textContent = e.message;
+        document.getElementById('pay-dialog-err').style.display = 'block';
+    }
 }
 
 async function exportInstallmentsExcel() {

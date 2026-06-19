@@ -19,6 +19,8 @@ public class CategoryService {
     }
 
     public Category create(CategoryRequest req) {
+        if (repo.findByName(req.name()).isPresent())
+            throw new RuntimeException("Bu adda kateqoriya artıq mövcuddur: " + req.name());
         Category cat = Category.builder().name(req.name()).build();
         return repo.save(cat);
     }

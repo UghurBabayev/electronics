@@ -25,6 +25,10 @@ public class InstallmentPayment {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
+    @Builder.Default
+    @Column(name = "paid_amount", nullable = false, precision = 12, scale = 2)
+    private BigDecimal paidAmount = BigDecimal.ZERO;
+
     @Column(name = "paid_date")
     private LocalDate paidDate;
 
