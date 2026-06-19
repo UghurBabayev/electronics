@@ -52,9 +52,8 @@ public class ReportService {
     }
 
     private BigDecimal inventoryValue(boolean admin, String username) {
-        var products = admin ? productRepo.findAll() : productRepo.findByCreatedByUsername(username);
+        var products = admin ? productRepo.findInStock() : productRepo.findInStockByUser(username);
         return products.stream()
-                .filter(p -> p.getQuantity() > 0)
                 .map(p -> p.getPurchasePrice().multiply(BigDecimal.valueOf(p.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
